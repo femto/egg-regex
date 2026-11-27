@@ -61,6 +61,11 @@ fn main(io: Io, a: Allocator) void {
     bad(io, a, "(?<>a)")
     bad(io, a, "(?<a-b>c)")
     bad(io, a, "[[:nope:]]")
+    bad(io, a, "a\\p{Nope}")
+    bad(io, a, "[x\\P{Nope}]")
+    bad(io, a, "\\p")
+    bad(io, a, "\\p{L")
+    bad(io, a, "\\p{}")
     bad(io, a, "\\x{110000}")
     bad(io, a, "\\x{}")
     bad(io, a, "\\xg0")
@@ -78,4 +83,5 @@ fn main(io: Io, a: Allocator) void {
     bad(io, a, "(?)")
     bad(io, a, "\\_\\ \\#")
     bad(io, a, "(?<Year_2>\\d+)")
+    bad(io, a, "\\p{^Greek}\\PL\\pN\\p{Any}")
 }

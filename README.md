@@ -109,6 +109,7 @@ RE2's, as Go's `regexp` has it:
 | `.` | any character but `\n` (any with `(?s)`) |
 | `[abc]` `[^a-z]` `[[:alpha:]]` `[[:^digit:]]` | classes, with ranges and POSIX classes |
 | `\d` `\w` `\s` `\D` `\W` `\S` | ASCII digit, word character, space, and their negations |
+| `\pL` `\p{Lu}` `\p{Greek}` `\PL` `\p{^Greek}` `\p{Any}` | a Unicode general category or script, as Go's `unicode` package has them (Unicode 17.0.0), its negation, or any code point; in classes too (`[\p{Han}\d]`) |
 | `xy` `x\|y` | concatenation, alternation |
 | `x*` `x+` `x?` `x{n}` `x{n,}` `x{n,m}` | repetition, greedy (n and m at most 1000) |
 | `x*?` `x+?` `x??` `x{n,m}?` | the same, lazy |
@@ -116,13 +117,18 @@ RE2's, as Go's `regexp` has it:
 | `^` `$` | start and end of text (of a line with `(?m)`) |
 | `\A` `\z` | start and end of text |
 | `\b` `\B` | an ASCII word boundary, and not one |
-| `(?i)` `(?m)` `(?s)` `(?U)` `(?i-m)` `(?i:x)` | flags: case-insensitive, multi-line, `.` matches `\n`, lazy by default |
+| `(?i)` `(?m)` `(?s)` `(?U)` `(?i-m)` `(?i:x)` | flags: case-insensitive (Unicode simple case folding: `(?i)k` matches U+212A, the Kelvin sign, and `(?i)σ` matches `Σ` and `ς`), multi-line, `.` matches `\n`, lazy by default |
 
 Patterns and text are UTF-8: `.` and classes match a code point, and a
-byte that is not UTF-8 matches as U+FFFD would. Differences from Go's
-`regexp`, for now: `(?i)` folds ASCII letters only; `\p{...}` Unicode
-classes, `\Q...\E` and octal escapes are not there yet; and a group name
-may not be used twice or start with a digit (as in RE2 and Rust).
+byte that is not UTF-8 matches as U+FFFD would. `\d`, `\w`, `\s` and `\b`
+are ASCII, as in RE2 and Go: for any letter, write `\pL` or
+`[\pL\pN_]`. Differences from Go's `regexp`, for now: `\Q...\E` and
+octal escapes are not there yet; and a group name may not be used twice
+or start with a digit (as in RE2 and Rust).
+
+The Unicode tables, src/unicode.egg, are made from Go's `unicode` package
+by `go run tools/unicode/main.go > src/unicode.egg`, so that `\p{...}`
+and `(?i)` agree with Go's `regexp` (CI makes them again to check).
 
 ## How
 
@@ -138,7 +144,9 @@ RE2 and Go:
 - a lazy DFA (src/dfa.egg) on longer ones: a state is the set of
   instructions the NFA's threads are at, made the first time a search
   reaches it, its transitions filled in as they are taken. It steps on
-  classes of code points, so its semantics are the NFA's. One DFA finds
+  classes of code points, those that every instruction treats alike
+  (`\p{L}` is one class, however many ranges it has), so its semantics
+  are the NFA's. One DFA finds
   where the leftmost-first match ends, another, over the program
   backwards, where it starts; groups, when wanted, are then found by the
   NFA on that span alone. `^`, `$` and `\b` wait in a state for the

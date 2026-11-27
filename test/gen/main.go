@@ -21,7 +21,7 @@ func atom(depth int) string {
 	case 5:
 		return "."
 	case 6:
-		return []string{"[ab]", "[^a]", "[a-b ]", "\\\\w", "\\\\s"}[r.Intn(5)]
+		return []string{"[ab]", "[^a]", "[a-b ]", "\\\\w", "\\\\s", "\\\\pL", "\\\\p{Greek}", "\\\\PL", "[[:upper:]]", "σ", "k"}[r.Intn(11)]
 	case 7:
 		return []string{"^", "$", "\\\\b", "\\\\B"}[r.Intn(4)]
 	case 8, 9:
@@ -79,17 +79,26 @@ func concat(depth int) string {
 
 func expr(depth int) string {
 	s := concat(depth)
+	if depth == 0 && r.Intn(5) == 0 {
+		s = "(?i)" + s
+	}
 	for r.Intn(4) == 0 {
 		s += "|" + concat(depth)
 	}
 	return s
 }
 
+// Mostly a and b, now and then a letter that case folding or \pL
+// treats apart: K, the Kelvin sign, the long s, sigmas, é.
 func text() string {
 	var b strings.Builder
 	n := r.Intn(9)
 	for i := 0; i < n; i++ {
-		b.WriteByte("aab b"[r.Intn(5)])
+		if r.Intn(6) == 0 {
+			b.WriteString([]string{"K", "\\u{212a}", "\\u{17f}", "s", "Σ", "σ", "ς", "é"}[r.Intn(8)])
+		} else {
+			b.WriteByte("aab b"[r.Intn(5)])
+		}
 	}
 	return b.String()
 }

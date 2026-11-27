@@ -1,6 +1,8 @@
-// The lazy DFA, for long texts: a state is the set of instructions the
-// NFA's threads are at, in priority order, made the first time the
-// search reaches it, with its transitions filled in as they are taken.
+// The lazy DFA, for long texts: a state is the instructions the NFA's
+// threads start the position at, in priority order (those after the ones
+// that consumed the character before, then the thread that starts there,
+// if any), made the first time the search reaches it, with its
+// transitions filled in as they are taken.
 // It steps on classes of code points (prog.classes), not bytes, so the
 // semantics are the NFA's to the letter. A forward DFA finds where the
 // leftmost-first match ends; one over the program backwards
@@ -9,11 +11,13 @@
 //
 // Assertions look at the text on both sides of a position. Each state
 // knows the side it has read (the kind of character before it, going
-// forward, or after it, going back): an assertion that needs the other
-// side waits in the state, and the transition, which knows the next
-// character, settles it. That transition also says whether a match
-// ended at the state it left, so a match is seen one character late, as
-// in RE2.
+// forward, or after it, going back); the transition, which knows the
+// next character too, follows the threads from where the state starts
+// them, exactly as the Pike VM does at that position. (Keeping only where
+// they stopped, with an assertion waiting, loses which instructions
+// were passed on the way: (?:\b|b)* went round its loop twice.) The
+// transition also says whether a match ended at the state it left, so a
+// match is seen one character late, as in RE2.
 uses alloc
 
 const parse = @import("parse.egg")
@@ -302,6 +306,9 @@ fn begin(re: rx.Regex, a: Allocator, insts: Buf(prog.Inst), inout w: Work, inout
     close(a, insts, &w, forward, k, -1)
     var id = DEAD
     if (w.nlist > 0 or restart) {
+        // The state is its seeds: the program's start.
+        w.nlist = 0
+        put(a, &w.list, &w.nlist, 0)
         var flags = k << 1
         if (restart) {
             flags = flags | F_RESTART | F_ONLY
@@ -331,7 +338,7 @@ fn compute(re: rx.Regex, a: Allocator, insts: Buf(prog.Inst), inout w: Work, ino
         put(a, &w.seeds, &w.nseeds, d.pcs[at + i])
         i = i + 1
     }
-    const ncls = @len(re.class_starts)
+    const ncls = @len(re.class_reps)
     if (col >= ncls) {
         close(a, insts, &w, forward, known, col - ncls)
         var r = FINISH_NONE
@@ -346,7 +353,7 @@ fn compute(re: rx.Regex, a: Allocator, insts: Buf(prog.Inst), inout w: Work, ino
         return r
     }
     const k = re.class_kinds[col]
-    const cp = re.class_starts[col]
+    const cp = re.class_reps[col]
     close(a, insts, &w, forward, known, k)
     w.nnext = 0
     var matched = false
@@ -375,9 +382,17 @@ fn compute(re: rx.Regex, a: Allocator, insts: Buf(prog.Inst), inout w: Work, ino
         put(a, &w.seeds, &w.nseeds, w.next[i])
         i = i + 1
     }
+    // Dead if no thread gets anywhere from these seeds.
     close(a, insts, &w, forward, k, -1)
     var to = DEAD
     if (w.nlist > 0 or again or matched) {
+        // The state is its seeds.
+        w.nlist = 0
+        i = 0
+        while (i < w.nnext) {
+            put(a, &w.list, &w.nlist, w.next[i])
+            i = i + 1
+        }
         var f = k << 1
         if (again) {
             f = f | F_RESTART
@@ -418,7 +433,7 @@ fn accepts(re: rx.Regex, ins: prog.Inst, cp: i64) bool {
     }
 }
 
-// The class of cp.
+// The class of cp: of the interval it is in.
 fn class_of(re: rx.Regex, cp: i64) i64 {
     if (cp < 128) {
         return re.ascii_class[cp]
@@ -433,7 +448,7 @@ fn class_of(re: rx.Regex, cp: i64) i64 {
             hi = mid
         }
     }
-    return lo
+    return re.interval_class[lo]
 }
 
 // Where the leftmost-first match from start ends, -1 if there is none,
@@ -442,7 +457,7 @@ fn find_end(re: rx.Regex, a: Allocator, inout w: Work, inout d: Dfa, s: []u8, st
     if (d.full) {
         return FULL
     }
-    const ncls = @len(re.class_starts)
+    const ncls = @len(re.class_reps)
     const width = ncls + 4
     var st = begin(re, a, re.insts, &w, &d, true, kind_before(s, start), !re.anchored, width)
     var last = -1
@@ -501,7 +516,7 @@ fn find_start(re: rx.Regex, a: Allocator, inout w: Work, inout d: Dfa, s: []u8, 
     if (d.full) {
         return FULL
     }
-    const ncls = @len(re.class_starts)
+    const ncls = @len(re.class_reps)
     const width = ncls + 4
     var st = begin(re, a, re.rev, &w, &d, false, kind_after(s, end), false, width)
     var first = -1

@@ -5,6 +5,8 @@
 // offset where the pattern goes wrong.
 uses alloc
 
+const unicode = @import("unicode.egg")
+
 // The largest count in {n,m}, as RE2 has it.
 const MAX_REPEAT = 1000
 // How deep groups may nest, so that parsing and compiling, which recur
@@ -296,14 +298,17 @@ fn atom(a: Allocator, s: []u8, inout t: Ast, inout at: i64, inout flags: Flags, 
     return literal(a, &t, r.cp, flags)
 }
 
-// The code point cp, or both cases of an ASCII letter under (?i).
+// The code point cp, or under (?i) every code point that folds to it
+// (k: k, K and U+212A, the Kelvin sign).
 fn literal(a: Allocator, inout t: Ast, cp: i64, flags: Flags) i64 {
-    if (flags.fold and is_letter(cp)) {
-        const lower = cp | 32
-        const start = @len(t.ranges)
-        a.push(&t.ranges, Range{ .lo = lower - 32, .hi = lower - 32 })
-        a.push(&t.ranges, Range{ .lo = lower, .hi = lower })
-        return add(a, &t, .cls, start, 2)
+    if (flags.fold) {
+        var rs: Buf(Range) = .empty
+        defer a.free(rs)
+        a.push(&rs, Range{ .lo = cp, .hi = cp })
+        fold(a, &rs)
+        if (@len(rs) > 1 or rs[0].lo != rs[0].hi) {
+            return ranges_node(a, &t, &rs, false, false)
+        }
     }
     return add(a, &t, .lit, cp, 0)
 }
@@ -415,8 +420,14 @@ fn escape(a: Allocator, s: []u8, inout t: Ast, inout at: i64, flags: Flags) !i64
     if (c == 'd' or c == 'D' or c == 'w' or c == 'W' or c == 's' or c == 'S') {
         var rs: Buf(Range) = .empty
         defer a.free(rs)
-        perl(a, &rs, c)
+        perl(a, &rs, c, flags.fold)
         at = at + 2
+        return ranges_node(a, &t, &rs, false, false)
+    }
+    if (c == 'p' or c == 'P') {
+        var rs: Buf(Range) = .empty
+        defer a.free(rs)
+        try property(a, s, &at, &rs, flags.fold)
         return ranges_node(a, &t, &rs, false, false)
     }
     var look = Kind.empty
@@ -522,8 +533,10 @@ fn hex(c: u8) i64 {
     return -1
 }
 
-// \d \w \s and their negations \D \W \S, ASCII as in RE2.
-fn perl(a: Allocator, inout rs: Buf(Range), c: u8) void {
+// \d \w \s and their negations \D \W \S, ASCII as in RE2. Under (?i)
+// the set is folded before it is negated, as in Go: (?i)\w has U+212A,
+// so (?i)\W does not.
+fn perl(a: Allocator, inout rs: Buf(Range), c: u8, folding: bool) void {
     var set: Buf(Range) = .empty
     defer a.free(set)
     const lower = c | 32
@@ -538,6 +551,9 @@ fn perl(a: Allocator, inout rs: Buf(Range), c: u8) void {
         a.push(&set, Range{ .lo = 9, .hi = 10 })
         a.push(&set, Range{ .lo = 12, .hi = 13 })
         a.push(&set, Range{ .lo = 32, .hi = 32 })
+    }
+    if (folding) {
+        fold(a, &set)
     }
     if (c != lower) {
         negate(a, &set)
@@ -571,15 +587,19 @@ fn class(a: Allocator, s: []u8, inout t: Ast, inout at: i64, flags: Flags) !i64 
         }
         first = false
         if (c == '[' and at + 1 < @len(s) and s[at + 1] == ':') {
-            if (try posix(a, s, &at, &rs)) {
+            if (try posix(a, s, &at, &rs, flags.fold)) {
                 continue
             }
         }
         if (c == '\\' and at + 1 < @len(s)) {
             const e = s[at + 1]
             if (e == 'd' or e == 'D' or e == 'w' or e == 'W' or e == 's' or e == 'S') {
-                perl(a, &rs, e)
+                perl(a, &rs, e, flags.fold)
                 at = at + 2
+                continue
+            }
+            if (e == 'p' or e == 'P') {
+                try property(a, s, &at, &rs, flags.fold)
                 continue
             }
         }
@@ -599,6 +619,170 @@ fn class(a: Allocator, s: []u8, inout t: Ast, inout at: i64, flags: Flags) !i64 
     return ranges_node(a, &t, &rs, flags.fold, neg)
 }
 
+// \pN, \p{Name}, \p{^Name} and \PN, \P{Name}: a general category or a
+// script as Go's unicode package has them ("L", "Lu", "Greek"), or Any,
+// added to rs; under (?i) folded before it is negated, as in Go.
+fn property(a: Allocator, s: []u8, inout at: i64, inout rs: Buf(Range), folding: bool) !void {
+    const start = at
+    var neg = s[at + 1] == 'P'
+    var i = at + 2
+    if (i >= @len(s)) {
+        return error.BadProperty
+    }
+    var lo = i
+    var hi = i + 1
+    if (s[i] == '{') {
+        lo = i + 1
+        hi = lo
+        while (hi < @len(s) and s[hi] != '}') {
+            hi = hi + 1
+        }
+        if (hi >= @len(s)) {
+            return error.BadProperty
+        }
+        i = hi + 1
+        if (lo < hi and s[lo] == '^') {
+            neg = !neg
+            lo = lo + 1
+        }
+    } else {
+        i = i + 1
+    }
+    const name = s[lo..hi]
+    var set: Buf(Range) = .empty
+    defer a.free(set)
+    if (name == "Any") {
+        a.push(&set, Range{ .lo = 0, .hi = MAX_CP })
+    } else {
+        const data = unicode.table(name) orelse {
+            at = start
+            return error.BadProperty
+        }
+        read_ranges(a, &set, data)
+    }
+    if (folding) {
+        fold(a, &set)
+    }
+    if (neg) {
+        negate(a, &set)
+    }
+    for (set) |r| {
+        a.push(&rs, r)
+    }
+    at = i
+}
+
+// The value of a digit of unicode.egg's tables: its place in
+// unicode.DIGITS.
+fn digit(c: u8) i64 {
+    if (c >= 'A' and c <= 'Z') {
+        return @as(i64, c - 'A')
+    }
+    if (c >= 'a' and c <= 'z') {
+        return @as(i64, c - 'a') + 26
+    }
+    if (c >= '0' and c <= '9') {
+        return @as(i64, c - '0') + 52
+    }
+    return if (c == '+') 62 else 63
+}
+
+// The number at data[i], moving i past it (tools/unicode/main.go).
+fn table_number(data: []u8, inout i: i64) i64 {
+    var n = 0
+    var d = digit(data[i])
+    i = i + 1
+    while (d >= 32) {
+        n = n * 32 + d - 32
+        d = digit(data[i])
+        i = i + 1
+    }
+    return n * 32 + d
+}
+
+// The ranges of a table of unicode.egg, pushed onto rs.
+fn read_ranges(a: Allocator, inout rs: Buf(Range), data: []u8) void {
+    var i = 0
+    var next = 0
+    while (i < @len(data)) {
+        const lo = next + table_number(data, &i)
+        const hi = lo + table_number(data, &i)
+        a.push(&rs, Range{ .lo = lo, .hi = hi })
+        next = hi + 1
+    }
+}
+
+// The smallest and largest code points simple case folding changes, as
+// in Go: a set that does not reach between them folds to itself.
+const MIN_FOLD = 65
+const MAX_FOLD = 125251
+
+// rs with every code point that folds to one in it (unicode.ORBITS), as
+// Go's regexp folds under (?i). rs comes back sorted and merged.
+fn fold(a: Allocator, inout rs: Buf(Range)) void {
+    normalize(a, &rs)
+    var reaches = false
+    for (rs) |r| {
+        if (r.hi >= MIN_FOLD and r.lo <= MAX_FOLD) {
+            reaches = true
+        }
+    }
+    if (!reaches) {
+        return
+    }
+    var add_too: Buf(Range) = .empty
+    defer a.free(add_too)
+    const data = unicode.ORBITS
+    var i = 0
+    var first = 0
+    while (i < @len(data)) {
+        const n = table_number(data, &i)
+        first = first + table_number(data, &i)
+        // The members: first, then each as a gap from it; the orbit is
+        // added if any is in rs.
+        const at = i
+        var hit = contains(rs, first)
+        var k = 1
+        while (k < n) {
+            if (contains(rs, first + table_number(data, &i))) {
+                hit = true
+            }
+            k = k + 1
+        }
+        if (hit) {
+            var j = at
+            a.push(&add_too, Range{ .lo = first, .hi = first })
+            k = 1
+            while (k < n) {
+                const m = first + table_number(data, &j)
+                a.push(&add_too, Range{ .lo = m, .hi = m })
+                k = k + 1
+            }
+        }
+    }
+    for (add_too) |r| {
+        a.push(&rs, r)
+    }
+    normalize(a, &rs)
+}
+
+// Whether cp is in the sorted, merged rs.
+fn contains(rs: Buf(Range), cp: i64) bool {
+    var lo = 0
+    var hi = @len(rs)
+    while (lo < hi) {
+        const mid = lo + (hi - lo) / 2
+        if (cp < rs[mid].lo) {
+            hi = mid
+        } else if (cp > rs[mid].hi) {
+            lo = mid + 1
+        } else {
+            return true
+        }
+    }
+    return false
+}
+
 // One character in a class: a code point, or an escape for one.
 fn class_char(s: []u8, inout at: i64) !i64 {
     if (s[at] == '\\') {
@@ -614,7 +798,7 @@ fn class_char(s: []u8, inout at: i64) !i64 {
 
 // [:name:] or [:^name:] at s[at], adding its ranges and moving at past it;
 // false (at unmoved) if no ":]" closes it, so that it is a '[' and more.
-fn posix(a: Allocator, s: []u8, inout at: i64, inout rs: Buf(Range)) !bool {
+fn posix(a: Allocator, s: []u8, inout at: i64, inout rs: Buf(Range), folding: bool) !bool {
     var i = at + 2
     var neg = false
     if (i < @len(s) and s[i] == '^') {
@@ -676,6 +860,9 @@ fn posix(a: Allocator, s: []u8, inout at: i64, inout rs: Buf(Range)) !bool {
     } else {
         return error.BadClass
     }
+    if (folding) {
+        fold(a, &set)
+    }
     if (neg) {
         negate(a, &set)
     }
@@ -686,26 +873,11 @@ fn posix(a: Allocator, s: []u8, inout at: i64, inout rs: Buf(Range)) !bool {
     return true
 }
 
-// A class node of rs: with (?i) the other case of each ASCII letter too,
-// sorted and merged, then negated if neg.
-fn ranges_node(a: Allocator, inout t: Ast, inout rs: Buf(Range), fold: bool, neg: bool) i64 {
-    if (fold) {
-        const n = @len(rs)
-        var i = 0
-        while (i < n) {
-            const r = rs[i]
-            const ulo = if (r.lo > 'A') r.lo else 'A'
-            const uhi = if (r.hi < 'Z') r.hi else 'Z'
-            if (ulo <= uhi) {
-                a.push(&rs, Range{ .lo = ulo + 32, .hi = uhi + 32 })
-            }
-            const llo = if (r.lo > 'a') r.lo else 'a'
-            const lhi = if (r.hi < 'z') r.hi else 'z'
-            if (llo <= lhi) {
-                a.push(&rs, Range{ .lo = llo - 32, .hi = lhi - 32 })
-            }
-            i = i + 1
-        }
+// A class node of rs: with (?i) every code point that folds to one in
+// it too, sorted and merged, then negated if neg.
+fn ranges_node(a: Allocator, inout t: Ast, inout rs: Buf(Range), folding: bool, neg: bool) i64 {
+    if (folding) {
+        fold(a, &rs)
     }
     normalize(a, &rs)
     if (neg) {

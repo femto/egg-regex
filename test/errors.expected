@@ -31,6 +31,11 @@ a\q -> BadEscape at 1
 (?<>a) -> BadGroupName at 0
 (?<a-b>c) -> BadGroupName at 0
 [[:nope:]] -> BadClass at 1
+a\p{Nope} -> BadProperty at 1
+[x\P{Nope}] -> BadProperty at 2
+\p -> BadProperty at 0
+\p{L -> BadProperty at 0
+\p{} -> BadProperty at 0
 \x{110000} -> BadEscape at 0
 \x{} -> BadEscape at 0
 \xg0 -> BadEscape at 0
@@ -46,3 +51,4 @@ a{,2} -> ok
 (?) -> ok
 \_\ \# -> ok
 (?<Year_2>\d+) -> ok
+\p{^Greek}\PL\pN\p{Any} -> ok

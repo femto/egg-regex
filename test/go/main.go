@@ -14,6 +14,35 @@ import (
 	"strings"
 )
 
+// The line with Egg's \u{N} escapes as Go's \UNNNNNNNN, so that strconv
+// can read the literals. A backslash and the character after it go
+// together, so an escaped backslash before "u{41}" is left alone.
+func goEscapes(line string) string {
+	var b strings.Builder
+	for i := 0; i < len(line); i++ {
+		if line[i] != '\\' || i+1 >= len(line) {
+			b.WriteByte(line[i])
+			continue
+		}
+		if line[i+1] == 'u' && i+2 < len(line) && line[i+2] == '{' {
+			end := strings.IndexByte(line[i:], '}')
+			if end < 0 {
+				panic(line)
+			}
+			n, err := strconv.ParseUint(line[i+3:i+end], 16, 32)
+			if err != nil {
+				panic(line)
+			}
+			fmt.Fprintf(&b, "\\U%08x", n)
+			i += end
+			continue
+		}
+		b.WriteString(line[i : i+2])
+		i++
+	}
+	return b.String()
+}
+
 // The string literals of a line `t(io, a, &n, "pattern", "text")` or
 // `r(io, a, &n, "pattern", "text", "template")`, and which it is.
 func literals(line string) (string, []string) {
@@ -73,7 +102,7 @@ func main() {
 	sc := bufio.NewScanner(f)
 	n := 0
 	for sc.Scan() {
-		kind, args := literals(sc.Text())
+		kind, args := literals(goEscapes(sc.Text()))
 		if kind == "" {
 			continue
 		}
