@@ -1,0 +1,55 @@
+// The API around matching: starts out of range, group numbers and names,
+// and caps made again by each call.
+uses alloc, io
+
+const regex = @import("regex")
+
+fn show(io: Io, m: ?regex.Span) void {
+    if (m) |sp| {
+        io.print(sp.start, "-", sp.end, " len ", sp.len())
+    } else {
+        io.print("none")
+    }
+}
+
+fn main(io: Io, a: Allocator) !void {
+    // A start past the end, or before the start, finds nothing (and
+    // asks nothing of the text before it).
+    const line = try regex.compile(a, "(?m)^|\\b|$")
+    defer a.free(line)
+    show(io, line.find_at(a, "ab", 2))
+    show(io, line.find_at(a, "ab", 3))
+    show(io, line.find_at(a, "ab", -1))
+    show(io, line.find_at(a, "", 0))
+    show(io, line.find_at(a, "", 1))
+    var caps: Buf(?regex.Span) = .empty
+    defer a.free(caps)
+    io.print(line.captures_at(a, "ab", 3, &caps), " ", @len(caps))
+    io.print(line.captures_at(a, "ab", -5, &caps), " ", @len(caps))
+    // Groups by number and by name.
+    const date = try regex.compile(a, "(?P<y>\\d{4})-(?<m>\\d\\d)(?:-(\\d\\d))?")
+    defer a.free(date)
+    io.print(date.group_count(), " ", date.group_index("y") orelse -1, " ", date.group_index("m") orelse -1, " ", date.group_index("d") orelse -1)
+    const s = "due 2026-11, or 2027-01-15"
+    if (date.captures(a, s, &caps)) {
+        io.print(@len(caps))
+        for (caps) |c| {
+            show(io, c)
+        }
+    }
+    // From a later start, caps is made again, the third group now there.
+    if (date.captures_at(a, s, 11, &caps)) {
+        for (caps) |c| {
+            show(io, c)
+        }
+    }
+    // No match leaves caps empty.
+    io.print(date.captures(a, "no date", &caps), " ", @len(caps))
+    // A start inside a character still runs: offsets are bytes.
+    const dot = try regex.compile(a, ".")
+    defer a.free(dot)
+    show(io, dot.find_at(a, "日x", 1))
+    const none = try regex.compile(a, "a")
+    defer a.free(none)
+    io.print(none.group_count(), " ", none.is_match(a, "bab"), " ", none.is_match(a, "bbb"))
+}

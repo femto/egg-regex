@@ -3,10 +3,13 @@
 Regular expressions for [Egg](https://github.com/femto/egg), in pure Egg,
 matched in time linear in the text, as [RE2](https://github.com/google/re2)
 and Rust's [regex](https://github.com/rust-lang/regex) do. No pattern can
-make a match take exponential time, so a pattern or a text from outside
-is safe to run: `(x+x+)+y` on 100,000 `x`s takes milliseconds. The price
-is what needs backtracking: back-references and lookaround are not
-supported.
+make a match take exponential time: `(x+x+)+y` on 100,000 `x`s takes
+milliseconds. A match costs at most one step per instruction of the
+compiled pattern for each character of the text, and a pattern compiles
+to at most 100,000 instructions (`error.TooBig` past that), so text from
+outside is safe to match; a pattern from outside is bounded by its size,
+so limit how long one may be as well. The price is what needs
+backtracking: back-references and lookaround are not supported.
 
 ```
 clutch add regex --git https://github.com/femto/egg-regex
@@ -54,8 +57,10 @@ Positions are byte offsets, so `s[m.start..m.end]` is the match. Of the
 matches at the leftmost position, the one the pattern prefers wins, as in
 Perl, RE2, Go and Rust: `a|ab` finds `a` in `ab`, `a*?` the shortest. For
 every match in turn, call `find_at` from the end of the last one, or one
-character past it when it was empty (test/lib/check.egg does what Go's
-`FindAll` does).
+character past it when it was empty, and stop when there is no match or
+the start has gone past the end of the text (after an empty match at the
+end); `find_at` and `captures_at` find nothing from a start outside
+`0..@len(s)`. test/lib/check.egg does what Go's `FindAll` does.
 
 ## Syntax
 
@@ -100,4 +105,4 @@ clutch test
 `test/gen`) print, for each case, the groups of the leftmost match and
 every match; their expected output is what Go's `regexp` says of the same
 cases (`go run test/go/main.go`), which CI checks again. `test/errors.egg`
-has what is not a pattern.
+has what is not a pattern, and `test/api.egg` the rest of the API.

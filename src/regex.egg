@@ -54,9 +54,13 @@ const Regex = struct {
 
     // The leftmost match in s that starts at start or later. ^, \b and
     // the like still see the text before start: "^" does not match at
-    // start > 0. For every match in turn, search on from its end, or one
-    // character past it when it is empty.
+    // start > 0. A start outside 0..@len(s) finds nothing. For every match
+    // in turn, search on from its end, or one character past it when it
+    // is empty, and stop once the start is past the end of s.
     fn find_at(self: Regex, a: Allocator, s: []u8, start: i64) ?Span {
+        if (start < 0 or start > @len(s)) {
+            return null
+        }
         var slots: Buf(i64) = .empty
         defer a.free(slots)
         if (!run(self, a, s, start, 2, false, &slots)) {
@@ -72,10 +76,14 @@ const Regex = struct {
         return self.captures_at(a, s, 0, &caps)
     }
 
+    // captures from start, which, as for find_at, must be in 0..@len(s).
     fn captures_at(self: Regex, a: Allocator, s: []u8, start: i64, inout caps: Buf(?Span)) bool {
         var slots: Buf(i64) = .empty
         defer a.free(slots)
         a.resize(&caps, 0, null)
+        if (start < 0 or start > @len(s)) {
+            return false
+        }
         if (!run(self, a, s, start, 2 * self.ncap, false, &slots)) {
             return false
         }
