@@ -90,22 +90,20 @@ const Regex = struct {
     fn captures_at(self: Regex, a: Allocator, s: []u8, start: i64, inout caps: Buf(?Span)) bool {
         var slots: Buf(i64) = .empty
         defer a.free(slots)
-        a.resize(&caps, 0, null)
-        if (start < 0 or start > @len(s)) {
+        if (start < 0 or start > @len(s) or !run(self, a, s, start, 2 * self.ncap, false, &slots)) {
+            clear(a, &caps)
             return false
         }
-        if (!run(self, a, s, start, 2 * self.ncap, false, &slots)) {
-            return false
+        // a.resize reallocates whenever the length changes, so caps keeps
+        // its length from one call to the next and is written in place.
+        if (@len(caps) != self.ncap) {
+            a.resize(&caps, self.ncap, null)
         }
         var i = 0
         while (i < self.ncap) {
             const lo = slots[2 * i]
             const hi = slots[2 * i + 1]
-            if (lo >= 0 and hi >= 0) {
-                a.push(&caps, Span{ .start = lo, .end = hi })
-            } else {
-                a.push(&caps, null)
-            }
+            caps[i] = if (lo >= 0 and hi >= 0) Span{ .start = lo, .end = hi } else null
             i = i + 1
         }
         return true
@@ -140,7 +138,7 @@ const Regex = struct {
             }
         }
         it.pos = @len(s) + 1
-        a.resize(&caps, 0, null)
+        clear(a, &caps)
         return false
     }
 
@@ -316,6 +314,13 @@ const Iter = struct {
 
 fn iter() Iter {
     return Iter{ .pos = 0, .prev = -1 }
+}
+
+// caps emptied, reallocating only if it was not empty already.
+fn clear(a: Allocator, inout caps: Buf(?Span)) void {
+    if (@len(caps) != 0) {
+        a.resize(&caps, 0, null)
+    }
 }
 
 // Moves it past the match m, found from it.pos; false if m is an empty

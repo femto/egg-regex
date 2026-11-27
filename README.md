@@ -151,7 +151,7 @@ a 2019 Intel Mac, ms:
 | every `(?i)sherlock` | 15.0 | 36.5 |
 | `zzz+`, found nowhere | 2.0 | 0.2 |
 | 100,000 `is_match` on short texts | 32.3 | 15.5 |
-| 100,000 `captures` on short texts | 38.8 | 28.0 |
+| 100,000 `captures` on short texts | 26.1 | 28.0 |
 
 ## Tests
 
