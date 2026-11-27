@@ -1,600 +1,600 @@
-1: (4,5) true all 4-5
-2: (0,1) true all 0-1 2-3
-3: no false
-4: (0,1) true all 0-1 1-2 2-3 3-4 4-5
-5: (0,1) true all 0-1 1-2 2-3 3-4 4-5 5-6
-6: (0,1) true all 0-1 1-2 2-3 3-4 4-5 5-6 6-7 7-8
-7: no false
-8: (0,2) true all 0-2
-9: no false
-10: (0,1) true all 0-1 1-2
-11: (0,1) true all 0-1 1-2 2-3 3-4 4-5 5-6 6-7 7-8
-12: (0,0) true all 0-0
-13: no false
-14: no false
-15: (6,7) true all 6-7
-16: no false
-17: (1,3) true all 1-3
-18: (0,2) true all 0-2
-19: no false
-20: no false
-21: no false
-22: (3,4) true all 3-4 4-6
-23: (0,1) true all 0-1
-24: no false
-25: no false
-26: no false
-27: no false
-28: no false
-29: no false
-30: no false
-31: no false
-32: (0,3) true all 0-3
-33: no false
-34: (0,4) true all 0-4 5-5 6-6
-35: (0,2) true all 0-2 3-5 6-6 7-8
-36: (0,0) true all 0-0
-37: (0,0) true all 0-0
-38: (0,0) true all 0-0
-39: (0,0) true all 0-0
-40: (0,3)(-) true all 0-3
-41: (0,1)(-) true all 0-1 3-6
-42: (0,3)(-) true all 0-3 3-5
-43: no false
-44: (3,7)(3,6)(-)(-)(-) true all 3-7
-45: no false
-46: (0,2)(-)(-) true all 0-2 2-3
-47: no false
-48: (0,1)(-)(1,1) true all 0-1
-49: no false
-50: no false
-51: no false
-52: no false
-53: no false
-54: no false
-55: (0,1) true all 0-1 1-2 2-3 4-5 5-6
-56: (1,2) true all 1-2
-57: (1,2) true all 1-2 2-3 3-4
-58: no false
-59: no false
-60: no false
-61: (0,0)(-) true all 0-0 1-1 2-2 3-3 4-4 5-5 6-6 7-7
-62: (0,0)(-) true all 0-0 1-1 2-2 3-3 4-4 5-5 6-6 7-7
-63: (0,0)(-) true all 0-0 1-1 2-2 3-3 4-4 5-5 6-6 7-7
-64: (0,0) true all 0-0
-65: (0,0) true all 0-0 1-1 2-2 3-4 5-5 6-6 7-7 8-8
-66: (0,0) true all 0-0 1-1 2-3 3-4
-67: (0,6)(0,3)(-)(-)(3,6) true all 0-6
-68: no false
-69: (0,1)(0,0)(-)(-)(0,1) true all 0-1
-70: no false
-71: no false
-72: no false
-73: (0,3)(0,0)(-) true all 0-3
-74: no false
-75: no false
-76: no false
-77: no false
-78: no false
-79: (0,2)(-)(0,2)(1,2) true all 0-2
-80: no false
-81: (1,3)(-)(1,3)(2,3) true all 1-3
-82: (0,1) true all 0-1
-83: (0,1) true all 0-1 1-2 2-3 3-4 4-5
-84: (0,1) true all 0-1 1-2 2-3 3-4 4-5 5-6 6-7 7-8
-85: (0,3) true all 0-3
-86: (0,1) true all 0-1 1-2 2-4 4-5 5-6
-87: (0,1) true all 0-1
-88: no false
-89: no false
-90: no false
-91: (0,1)(-)(-)(-)(-)(-)(-)(-) true all 0-1 1-2 3-3 4-4 5-5 6-7 7-8
-92: (0,0)(-)(-)(-)(-)(-)(-)(-) true all 0-0 1-1 2-3
-93: (0,0)(-)(-)(-)(-)(-)(-)(-) true all 0-0 1-2 3-3
-94: no false
-95: (3,4) true all 3-4
-96: (2,3) true all 2-3
-97: (0,0) true all 0-0 1-2 3-3 4-5 5-6 7-7
-98: (0,0) true all 0-0 1-1
-99: (0,1) true all 0-1 2-2
-100: no false
-101: no false
-102: no false
-103: (0,3) true all 0-3 3-6
-104: no false
-105: no false
-106: (0,2) true all 0-2
-107: no false
-108: no false
-109: (0,1)(-)(-)(-) true all 0-1 1-4
-110: (0,0)(-)(-)(-) true all 0-0 1-1 2-2
-111: (0,1)(-)(-)(-) true all 0-1 1-2 2-3 4-4 5-6
-112: (0,6) true all 0-6
-113: (0,5) true all 0-5
-114: (0,4) true all 0-4
-115: no false
-116: (0,4) true all 0-4
-117: (0,4) true all 0-4
-118: (0,0) true all 0-0 1-1 2-2
-119: (0,0) true all 0-0 1-1 2-2 3-3 4-4 5-5 6-6 7-7
-120: (0,0) true all 0-0
-121: (1,1)(-)(-)(-)(-)(-) true all 1-1
-122: (7,8)(8,8)(-)(-)(-)(-) true all 7-8
-123: (6,6)(-)(-)(-)(-)(-) true all 6-6
-124: no false
-125: (0,5)(0,3)(-)(-)(-)(-)(-)(-)(-)(-)(-) true all 0-5 5-6
-126: (0,5)(0,3)(-)(-)(-)(-)(-)(-)(-)(-)(-) true all 0-5
-127: no false
-128: no false
-129: no false
-130: (0,2) true all 0-2 3-5
-131: (0,0) true all 0-0
-132: (0,0) true all 0-0 1-1 2-2 3-4 5-7
-133: (0,1) true all 0-1 1-2 2-3 3-4 4-5
-134: (0,1) true all 0-1
-135: (0,1) true all 0-1
-136: no false
-137: no false
-138: (0,7)(5,6)(-)(-) true all 0-7
-139: (7,8)(-)(8,8)(-) true all 7-8
-140: no false
-141: (0,1)(-)(1,1)(-) true all 0-1
-142: no false
-143: no false
-144: no false
-145: no false
-146: no false
-147: no false
-148: (0,1) true all 0-1
-149: no false
-150: no false
-151: no false
-152: (1,2)(-) true all 1-2
-153: no false
-154: (0,0)(-) true all 0-0 1-1
-155: (0,0)(-) true all 0-0 1-1
-156: (0,5)(-) true all 0-5 6-6
-157: no false
-158: no false
-159: no false
-160: (3,6) true all 3-6
-161: no false
-162: no false
-163: (0,0) true all 0-0
-164: (0,4) true all 0-4 4-6 7-7 8-8
-165: (0,0) true all 0-0 1-1 2-3 4-4 5-5
-166: no false
-167: no false
-168: no false
-169: (0,1) true all 0-1
-170: (1,7) true all 1-7
-171: no false
-172: no false
-173: (0,3)(-) true all 0-3 3-4
-174: no false
-175: no false
-176: no false
-177: no false
-178: (0,1)(-)(-) true all 0-1 1-2
-179: (0,1)(0,1)(-) true all 0-1 1-2 2-3 3-5 5-6
-180: no false
-181: no false
-182: (0,2) true all 0-2
-183: no false
-184: (1,2) true all 1-2 3-4
-185: (1,2) true all 1-2 3-4
-186: no false
-187: no false
-188: no false
-189: (2,8)(6,8)(7,7)(7,8) true all 2-8
-190: (0,5)(-)(-)(-) true all 0-5
-191: no false
-192: (1,3)(-)(-)(-) true all 1-3
-193: no false
-194: (0,2) true all 0-2 2-4
-195: no false
-196: (0,2)(2,2)(-)(-) true all 0-2
-197: (0,3)(3,3)(-)(-) true all 0-3
-198: (0,5)(5,5)(-)(-) true all 0-5
-199: (0,1) true all 0-1
-200: (0,0) true all 0-0
-201: (0,0) true all 0-0
-202: (0,0)(-)(-)(-)(-) true all 0-0 2-2 3-3 5-5
-203: (0,7)(0,7)(1,7)(1,2)(-) true all 0-7
-204: (1,1)(-)(-)(-)(-) true all 1-1 2-2
-205: (0,0) true all 0-0 1-1 2-3 4-4 5-5
-206: (0,2) true all 0-2 3-5 6-6 7-7 8-8
-207: (0,0) true all 0-0 1-2
-208: (0,1)(-)(-) true all 0-1 3-4 4-5 6-7
-209: no false
-210: (4,5)(-)(-) true all 4-5 5-6
-211: no false
-212: no false
-213: no false
-214: no false
-215: no false
-216: no false
-217: no false
-218: no false
-219: no false
-220: no false
-221: (0,1) true all 0-1
-222: (0,1) true all 0-1 1-2 2-3 4-5 5-6 6-7
-223: no false
-224: (1,4)(1,4) true all 1-4
-225: no false
-226: (1,3) true all 1-3
-227: (0,1) true all 0-1
-228: (2,3) true all 2-3
-229: no false
-230: (0,1) true all 0-1
-231: no false
-232: no false
-233: (0,1) true all 0-1
-234: (0,1) true all 0-1 2-3 3-4 6-7
-235: no false
-236: no false
-237: no false
-238: (0,1) true all 0-1 1-2
-239: (0,1) true all 0-1 1-2
-240: (0,1) true all 0-1 1-2 2-3 3-4 4-5 5-6
-241: (0,1)(-)(-)(-) true all 0-1
-242: (0,5)(0,2)(0,2)(3,5) true all 0-5
-243: no false
-244: no false
-245: (0,1) true all 0-1
-246: (0,2) true all 0-2
-247: no false
-248: (0,6)(0,6)(0,5)(3,5) true all 0-6
-249: (0,6)(0,6)(0,5)(2,4) true all 0-6
-250: (0,1) true all 0-1 1-2
-251: no false
-252: no false
-253: (0,0) true all 0-0 1-1 2-2 3-3
-254: (0,0) true all 0-0 1-1 2-2 3-3 4-4 5-5 6-6 7-7
-255: (0,0) true all 0-0 1-1 2-2 3-3 4-4 5-5 6-6
-256: no false
-257: (0,1)(-)(-)(-)(-)(-)(-)(-)(-)(-)(-) true all 0-1 1-2
-258: (0,1)(-)(-)(-)(-)(-)(-)(-)(-)(-)(-) true all 0-1 1-3 3-4 4-5 5-6 6-7 7-8
-259: no false
-260: (0,1) true all 0-1 1-2 2-3 3-4 4-5
-261: (0,1) true all 0-1 1-2 2-3 3-4
-262: no false
-263: no false
-264: no false
-265: no false
-266: no false
-267: (0,1) true all 0-1
-268: (0,8)(4,7)(4,5) true all 0-8
-269: (0,0)(-)(-) true all 0-0 1-7
-270: (0,3)(0,2)(0,1) true all 0-3
-271: (4,5)(-)(-) true all 4-5
-272: (2,3)(-)(-) true all 2-3 4-5 6-7
-273: no false
-274: (4,7)(4,6)(-)(7,7)(-)(-)(-) true all 4-7
-275: no false
-276: (0,3)(0,2)(-)(3,3)(-)(-)(-) true all 0-3
-277: no false
-278: (0,3) true all 0-3
-279: no false
-280: (0,1)(-)(-)(-)(-)(-)(-)(-) true all 0-1 2-2 3-3
-281: (0,2)(-)(-)(-)(-)(-)(-)(-) true all 0-2 3-3 4-4
-282: (0,0)(-)(-)(-)(-)(-)(-)(-) true all 0-0 1-1 2-2 3-5 6-6 7-7 8-8
-283: (0,2)(-) true all 0-2 2-8
-284: (0,2)(-) true all 0-2 2-7
-285: no false
-286: (0,1)(0,0)(-) true all 0-1
-287: (0,3)(0,2)(1,2) true all 0-3
-288: (0,7)(0,2)(0,2) true all 0-7
-289: (0,0)(-)(-) true all 0-0 1-1
-290: (0,0)(-)(-) true all 0-0 1-1 2-2 3-3
-291: (0,0)(-)(-) true all 0-0 1-1
-292: (0,3) true all 0-3 5-8
-293: (1,3) true all 1-3
-294: (0,1) true all 0-1
-295: no false
-296: (0,2)(-)(-) true all 0-2
-297: no false
-298: no false
-299: no false
-300: no false
-301: no false
-302: (0,3) true all 0-3 4-6
-303: no false
-304: (0,2) true all 0-2 3-3
-305: (0,4) true all 0-4
-306: (0,7) true all 0-7
-307: (0,2)(-)(-)(-) true all 0-2 2-4
-308: (0,2)(-)(-)(-) true all 0-2
-309: no false
-310: no false
-311: (1,2) true all 1-2 2-3
-312: (0,1) true all 0-1 2-3
-313: (0,0)(-) true all 0-0 1-1
-314: (0,0)(-) true all 0-0 1-1 2-2 3-3 4-4
-315: (0,0)(-) true all 0-0
-316: (0,3)(1,3)(2,3) true all 0-3
-317: (4,6)(5,6)(5,6) true all 4-6
-318: no false
-319: no false
-320: no false
-321: (0,1) true all 0-1 1-2
-322: no false
-323: no false
-324: no false
-325: (0,1)(-)(-)(-)(-)(-)(-) true all 0-1
-326: (0,1)(-)(-)(-)(-)(-)(-) true all 0-1
-327: (2,3)(-)(-)(-)(-)(-)(-) true all 2-3 5-6
-328: no false
-329: no false
-330: no false
-331: (0,4)(-) true all 0-4
-332: no false
-333: no false
-334: no false
-335: (0,2)(-)(-)(-) true all 0-2 2-4 6-7
-336: (1,3)(-)(-)(-) true all 1-3
-337: (0,0)(-) true all 0-0 1-1 2-2 3-3 4-4
-338: (0,0)(-) true all 0-0 1-1 2-2 3-3 4-4 5-5 6-6
-339: (0,0)(-) true all 0-0 1-1 2-2 3-3 4-4
-340: no false
-341: no false
-342: no false
-343: (1,1)(-) true all 1-1 2-5 6-6 8-8
-344: (0,1)(-) true all 0-1 2-4
-345: (0,3)(0,3) true all 0-3
-346: (0,2)(0,2) true all 0-2
-347: no false
-348: no false
-349: no false
-350: no false
-351: no false
-352: no false
-353: no false
-354: (0,2)(0,2)(0,2) true all 0-2 3-5
-355: no false
-356: no false
-357: no false
-358: no false
-359: no false
-360: no false
-361: (0,5) true all 0-5
-362: (0,6) true all 0-6
-363: (0,5) true all 0-5
-364: (3,6) true all 3-6
-365: (0,4) true all 0-4
-366: (1,6) true all 1-6
-367: (0,1)(-)(-)(-) true all 0-1 5-6
-368: (0,1)(-)(-)(-) true all 0-1 1-2 2-3 4-5
-369: (0,1)(-)(-)(-) true all 0-1 1-2 2-7
-370: no false
-371: no false
-372: no false
-373: no false
-374: no false
-375: no false
-376: no false
-377: no false
-378: no false
-379: no false
-380: no false
-381: no false
-382: (0,5)(1,3) true all 0-5
-383: (0,7)(1,5) true all 0-7
-384: no false
-385: no false
-386: no false
-387: no false
-388: no false
-389: no false
-390: (0,4) true all 0-4
-391: no false
-392: no false
-393: no false
-394: no false
-395: (1,4) true all 1-4
-396: no false
-397: no false
-398: (0,3)(1,3) true all 0-3 3-5
-399: no false
-400: no false
-401: (0,5)(-)(-)(-) true all 0-5
-402: no false
-403: (0,1)(-)(-)(-) true all 0-1 1-3
-404: no false
-405: no false
-406: (0,0) true all 0-0 1-1 2-3 4-4 5-5 6-7
-407: (0,0) true all 0-0 1-1 2-2 3-7
-408: (0,0) true all 0-0 1-1
-409: no false
-410: no false
-411: (2,6) true all 2-6
-412: (0,1) true all 0-1
-413: no false
-414: (0,1) true all 0-1 1-2
-415: (0,0) true all 0-0 6-6
-416: (0,0) true all 0-0 1-1 2-2 3-3
-417: (0,0) true all 0-0 6-6
-418: no false
-419: (1,2) true all 1-2
-420: no false
-421: (0,0)(-)(-)(-)(-)(-) true all 0-0 1-1 2-2
-422: (0,0)(-)(-)(-)(-)(-) true all 0-0 1-4 5-5 6-6 7-7
-423: (0,0)(-)(-)(-)(-)(-) true all 0-0 1-1 2-5 6-6 7-7 8-8
-424: (0,0)(0,0) true all 0-0 1-2
-425: (0,0)(0,0) true all 0-0
-426: (0,0)(0,0) true all 0-0 1-1 2-2 3-3
-427: no false
-428: no false
-429: no false
-430: (0,7) true all 0-7
-431: (0,4) true all 0-4
-432: (0,8) true all 0-8
-433: no false
-434: no false
-435: no false
-436: (4,6) true all 4-6
-437: no false
-438: (4,5) true all 4-5
-439: (0,5)(-) true all 0-5 6-6 8-8
-440: (0,0)(-) true all 0-0 1-1 2-7
-441: (1,1)(-) true all 1-1 2-2
-442: (0,1) true all 0-1 2-2
-443: (0,0) true all 0-0 1-2 3-3 4-4 5-5 6-7 8-8
-444: (0,0) true all 0-0 1-2
-445: (0,1)(-) true all 0-1 2-5 6-6 7-7
-446: (0,0)(-) true all 0-0 1-2
-447: (0,0)(-) true all 0-0 1-3 4-5 6-7 8-8
-448: no false
-449: (0,5)(0,1)(-)(4,5) true all 0-5
-450: no false
-451: (0,0)(-)(-) true all 0-0 1-1 2-2 3-3 4-4 5-5 6-6 7-7
-452: (0,0)(-)(-) true all 0-0 1-1 2-2 3-3
-453: (0,0)(-)(-) true all 0-0 1-1 2-2 3-3
-454: no false
-455: (2,4)(4,4)(-)(-)(-)(-)(-)(-) true all 2-4
-456: no false
-457: (0,1)(-) true all 0-1
-458: (0,2)(-) true all 0-2 2-3 3-4
-459: (0,1)(-) true all 0-1
-460: (0,2)(-)(-)(-) true all 0-2 2-3 3-5 5-7
-461: (0,1)(-)(-)(0,0) true all 0-1 3-5
-462: (0,2)(-)(-)(-) true all 0-2 2-4 5-7
-463: no false
-464: (1,2) true all 1-2
-465: (0,1) true all 0-1 1-2
-466: (2,3)(-)(-)(-) true all 2-3
-467: no false
-468: (4,5)(-)(-)(-) true all 4-5 5-6 6-7
-469: (0,1) true all 0-1 3-5
-470: (1,2) true all 1-2 4-5
-471: (0,2) true all 0-2
-472: (0,0) true all 0-0
-473: (0,0) true all 0-0
-474: (0,0) true all 0-0
-475: (0,3)(1,3) true all 0-3
-476: (0,2)(0,2) true all 0-2
-477: (0,3)(0,3) true all 0-3 3-4
-478: no false
-479: no false
-480: no false
-481: (0,1) true all 0-1
-482: (0,1) true all 0-1 1-2 2-3 3-4 4-5 5-6 6-7 7-8
-483: (0,1) true all 0-1 1-2 2-3 3-4 4-5 5-6
-484: (0,3)(0,2)(2,2)(2,2) true all 0-3 3-5 6-7
-485: no false
-486: (2,7)(2,5)(4,5)(5,6) true all 2-7
-487: (0,5) true all 0-5 6-8
-488: (0,0) true all 0-0 1-1 2-4 5-5 6-6
-489: (0,2) true all 0-2
-490: no false
-491: no false
-492: no false
-493: no false
-494: no false
-495: no false
-496: no false
-497: (3,5) true all 3-5
-498: (0,3) true all 0-3
-499: (0,3)(1,3)(-)(-)(-)(-)(-)(-) true all 0-3 3-7
-500: (0,6)(-)(0,6)(4,5)(-)(-)(-)(-) true all 0-6
-501: (0,1)(-)(-)(-)(-)(-)(-)(-) true all 0-1 1-6 6-7
-502: no false
-503: no false
-504: no false
-505: no false
-506: (0,5) true all 0-5
-507: (4,8) true all 4-8
-508: (1,2) true all 1-2 5-6 6-7
-509: (2,3) true all 2-3 4-5 5-6
-510: no false
-511: no false
-512: (0,2) true all 0-2
-513: (0,2) true all 0-2
-514: (0,1)(-)(-)(-)(-)(-)(-)(-) true all 0-1 5-7
-515: (0,2)(-)(-)(-)(-)(-)(-)(-) true all 0-2 2-3
-516: (0,2)(-)(-)(-)(-)(-)(-)(-) true all 0-2
-517: no false
-518: no false
-519: no false
-520: no false
-521: (0,1) true all 0-1 1-2
-522: (0,1) true all 0-1
-523: (0,7)(-)(-)(-) true all 0-7
-524: no false
-525: (0,5)(-)(-)(-) true all 0-5
-526: (0,0) true all 0-0 1-1 2-2 3-3
-527: (0,0) true all 0-0 1-1 2-2 3-3 4-4
-528: (0,0) true all 0-0 1-1 2-2 3-3 4-4 5-5 6-6 7-7 8-8
-529: no false
-530: no false
-531: no false
-532: no false
-533: (0,5)(-)(3,5)(-)(4,5) true all 0-5
-534: no false
-535: no false
-536: no false
-537: no false
-538: no false
-539: no false
-540: no false
-541: no false
-542: no false
-543: no false
-544: (0,0)(-)(-)(-)(-)(-) true all 0-0 1-1 2-2 3-3 4-4 5-5 6-6 7-7
-545: (0,0)(-)(-)(-)(-)(-) true all 0-0 1-1 2-2 3-3 4-4
-546: (0,0)(-)(-)(-)(-)(-) true all 0-0 1-1 2-2 3-3 4-4 5-5 6-6 7-7 8-8
-547: no false
-548: (0,2)(0,1) true all 0-2 2-5
-549: no false
-550: (0,4)(-) true all 0-4
-551: (0,5)(0,5) true all 0-5
-552: no false
-553: no false
-554: no false
-555: no false
-556: (0,4)(1,4)(-)(-) true all 0-4 5-5 6-6
-557: (0,1)(-)(-)(-) true all 0-1 2-3 4-4
-558: (1,1)(-)(-)(-) true all 1-1 2-2 3-3 4-4
-559: (0,1) true all 0-1 3-4
-560: (0,1) true all 0-1 1-2 5-6
-561: no false
-562: (4,6)(5,6) true all 4-6 7-8
-563: (0,2)(1,2) true all 0-2
-564: no false
-565: no false
-566: no false
-567: no false
-568: (0,2)(1,2) true all 0-2
-569: (4,6)(5,6) true all 4-6
-570: (0,5)(1,5) true all 0-5
-571: (0,0)(-)(-) true all 0-0 1-1 2-2 3-3
-572: (0,0)(-)(-) true all 0-0 1-1 2-2 3-3
-573: (0,0)(-)(-) true all 0-0 1-1 2-2 3-3 4-4 5-5
-574: (0,2)(0,1)(-)(-)(-)(-) true all 0-2 2-3
-575: (0,2)(0,1)(-)(-)(-)(-) true all 0-2 3-6 7-8
-576: no false
-577: (0,1) true all 0-1 1-2
-578: (0,1) true all 0-1 1-2
-579: (0,1) true all 0-1 2-3 4-5 5-6 6-7 7-8
-580: (4,5) true all 4-5
-581: (1,2) true all 1-2 2-3 3-4
-582: (0,1) true all 0-1 3-4 6-7 7-8
-583: (0,1) true all 0-1 1-2
-584: (0,1) true all 0-1 4-5 5-6
-585: (1,2) true all 1-2
-586: (0,0) true all 0-0 1-1 2-2
-587: (0,0) true all 0-0 1-1
-588: (0,0) true all 0-0 1-1 2-2 3-3 4-4
-589: no false
-590: no false
-591: (2,5) true all 2-5
-592: (1,3) true all 1-3
-593: no false
-594: (3,6) true all 3-6
-595: no false
-596: no false
-597: no false
-598: no false
-599: no false
-600: (3,6) true all 3-6
+1: (4,5) true all 4-5 repl "aaaa<b|>a" lit "aaaa#a" split "aaaa" "a"
+2: (0,1) true all 0-1 2-3 repl "<b|> <b|>" lit "# #" split "" " " ""
+3: no false repl "" lit "" split ""
+4: (0,1) true all 0-1 1-2 2-3 3-4 4-5 repl "< |><b|><b|><b|>< |>" lit "#####" split "" "" "" "" "" ""
+5: (0,1) true all 0-1 1-2 2-3 3-4 4-5 5-6 repl "<a|><a|>< |><b|><a|><b|>" lit "######" split "" "" "" "" "" "" ""
+6: (0,1) true all 0-1 1-2 2-3 3-4 4-5 5-6 6-7 7-8 repl "<b|><a|><a|><a|>< |><a|><b|>< |>" lit "########" split "" "" "" "" "" "" "" "" ""
+7: no false repl "" lit "" split ""
+8: (0,2) true all 0-2 repl "<bb|>aa   " lit "#aa   " split "" "aa   "
+9: no false repl "aaaaa" lit "aaaaa" split "aaaaa"
+10: (0,1) true all 0-1 1-2 repl "< |><a|>" lit "##" split "" "" ""
+11: (0,1) true all 0-1 1-2 2-3 3-4 4-5 5-6 6-7 7-8 repl "< |><b|><b|><b|>< |><a|><a|>< |>" lit "########" split "" "" "" "" "" "" "" "" ""
+12: (0,0) true all 0-0 repl "<|>" lit "#" split ""
+13: no false repl "b aaba b" lit "b aaba b" split "b aaba b"
+14: no false repl "" lit "" split ""
+15: (6,7) true all 6-7 repl " aaabb<a|>" lit " aaabb#" split " aaabb" ""
+16: no false repl "" lit "" split ""
+17: (1,3) true all 1-3 repl "b<ba|>b" lit "b#b" split "b" "b"
+18: (0,2) true all 0-2 repl "<ba|>" lit "#" split "" ""
+19: no false repl "b" lit "b" split "b"
+20: no false repl "ab" lit "ab" split "ab"
+21: no false repl "ab a aa" lit "ab a aa" split "ab a aa"
+22: (3,4) true all 3-4 4-6 repl " a <b|><ab|>" lit " a ##" split " a " "" ""
+23: (0,1) true all 0-1 repl "<b|>" lit "#" split "" ""
+24: no false repl "a" lit "a" split "a"
+25: no false repl " abb" lit " abb" split " abb"
+26: no false repl "   bb" lit "   bb" split "   bb"
+27: no false repl "baba" lit "baba" split "baba"
+28: no false repl "b bab " lit "b bab " split "b bab "
+29: no false repl "a a" lit "a a" split "a a"
+30: no false repl "aaa" lit "aaa" split "aaa"
+31: no false repl "a a" lit "a a" split "a a"
+32: (0,3) true all 0-3 repl "< bb|> b b " lit "# b b " split "" " b b "
+33: no false repl "ba " lit "ba " split "ba "
+34: (0,4) true all 0-4 5-5 6-6 repl "<bbb |>a<|>a<|>" lit "#a#a#" split "" "a" "a"
+35: (0,2) true all 0-2 3-5 6-6 7-8 repl "<bb|>a<  |>a<|>a<b|>" lit "#a#a#a#" split "" "a" "a" "a" ""
+36: (0,0) true all 0-0 repl "<|>" lit "#" split ""
+37: (0,0) true all 0-0 repl "<|>ba" lit "#ba" split "ba"
+38: (0,0) true all 0-0 repl "<|>bba" lit "#bba" split "bba"
+39: (0,0) true all 0-0 repl "<|>" lit "#" split ""
+40: (0,3)(-) true all 0-3 repl "<abb|>" lit "#" split "" ""
+41: (0,1)(-) true all 0-1 3-6 repl "<a|>  <bbb|>" lit "#  #" split "" "  " ""
+42: (0,3)(-) true all 0-3 3-5 repl "<baa|><ab|>" lit "##" split "" "" ""
+43: no false repl "a" lit "a" split "a"
+44: (3,7)(3,6)(-)(-)(-) true all 3-7 repl " b <bba |bba>a" lit " b #a" split " b " "a"
+45: no false repl "" lit "" split ""
+46: (0,2)(-)(-) true all 0-2 2-3 repl "<ba|><a|>" lit "##" split "" "" ""
+47: no false repl "" lit "" split ""
+48: (0,1)(-)(1,1) true all 0-1 repl "<a|>" lit "#" split "" ""
+49: no false repl "b " lit "b " split "b "
+50: no false repl " a  aa " lit " a  aa " split " a  aa "
+51: no false repl "bbbbb" lit "bbbbb" split "bbbbb"
+52: no false repl "bba" lit "bba" split "bba"
+53: no false repl "b" lit "b" split "b"
+54: no false repl "a " lit "a " split "a "
+55: (0,1) true all 0-1 1-2 2-3 4-5 5-6 repl "<b|><a|><a|> <a|><a|>" lit "### ##" split "" "" "" " " "" ""
+56: (1,2) true all 1-2 repl " <a|>" lit " #" split " " ""
+57: (1,2) true all 1-2 2-3 3-4 repl " <a|><a|><b|>" lit " ###" split " " "" "" ""
+58: no false repl " " lit " " split " "
+59: no false repl "b " lit "b " split "b "
+60: no false repl "aabaab" lit "aabaab" split "aabaab"
+61: (0,0)(-) true all 0-0 1-1 2-2 3-3 4-4 5-5 6-6 7-7 repl "<|> <|>a<|>a<|>a<|>a<|>b<|>b<|>" lit "# #a#a#a#a#b#b#" split " " "a" "a" "a" "a" "b" "b"
+62: (0,0)(-) true all 0-0 1-1 2-2 3-3 4-4 5-5 6-6 7-7 repl "<|> <|>b<|>b<|>b<|> <|> <|>b<|>" lit "# #b#b#b# # #b#" split " " "b" "b" "b" " " " " "b"
+63: (0,0)(-) true all 0-0 1-1 2-2 3-3 4-4 5-5 6-6 7-7 repl "<|>b<|>a<|>b<|>b<|> <|>b<|>a<|>" lit "#b#a#b#b# #b#a#" split "b" "a" "b" "b" " " "b" "a"
+64: (0,0) true all 0-0 repl "<|>" lit "#" split ""
+65: (0,0) true all 0-0 1-1 2-2 3-4 5-5 6-6 7-7 8-8 repl "<|>b<|>a<|>b< |>b<|>a<|>a<|>b<|>" lit "#b#a#b#b#a#a#b#" split "b" "a" "b" "b" "a" "a" "b"
+66: (0,0) true all 0-0 1-1 2-3 3-4 repl "<|>a<|>a< |>< |>" lit "#a#a##" split "a" "a" "" ""
+67: (0,6)(0,3)(-)(-)(3,6) true all 0-6 repl "<ba bbb|ba >" lit "#" split "" ""
+68: no false repl "a" lit "a" split "a"
+69: (0,1)(0,0)(-)(-)(0,1) true all 0-1 repl "< |>" lit "#" split "" ""
+70: no false repl "" lit "" split ""
+71: no false repl "b" lit "b" split "b"
+72: no false repl "bb b aa " lit "bb b aa " split "bb b aa "
+73: (0,3)(0,0)(-) true all 0-3 repl "<aaa|>bab" lit "#bab" split "" "bab"
+74: no false repl "ba" lit "ba" split "ba"
+75: no false repl "bbb" lit "bbb" split "bbb"
+76: no false repl "" lit "" split ""
+77: no false repl "" lit "" split ""
+78: no false repl "bbaab" lit "bbaab" split "bbaab"
+79: (0,2)(-)(0,2)(1,2) true all 0-2 repl "< b|>" lit "#" split "" ""
+80: no false repl "a " lit "a " split "a "
+81: (1,3)(-)(1,3)(2,3) true all 1-3 repl "b< b|>" lit "b#" split "b" ""
+82: (0,1) true all 0-1 repl "<b|>" lit "#" split "" ""
+83: (0,1) true all 0-1 1-2 2-3 3-4 4-5 repl "<b|><a|><b|><a|><b|>" lit "#####" split "" "" "" "" "" ""
+84: (0,1) true all 0-1 1-2 2-3 3-4 4-5 5-6 6-7 7-8 repl "<a|>< |><b|>< |><b|><b|><a|><a|>" lit "########" split "" "" "" "" "" "" "" "" ""
+85: (0,3) true all 0-3 repl "<aaa|>" lit "#" split "" ""
+86: (0,1) true all 0-1 1-2 2-4 4-5 5-6 repl "<a|><b|>< a|><b|><b|>" lit "#####" split "" "" "" "" "" ""
+87: (0,1) true all 0-1 repl "<b|>" lit "#" split "" ""
+88: no false repl "aa b" lit "aa b" split "aa b"
+89: no false repl "bb" lit "bb" split "bb"
+90: no false repl "" lit "" split ""
+91: (0,1)(-)(-)(-)(-)(-)(-)(-) true all 0-1 1-2 3-3 4-4 5-5 6-7 7-8 repl "<b|><b|>a<|>a<|>a<|> <b|><b|>" lit "##a#a#a# ##" split "" "" "a" "a" "a" " " "" ""
+92: (0,0)(-)(-)(-)(-)(-)(-)(-) true all 0-0 1-1 2-3 repl "<|>a<|>a<b|>" lit "#a#a#" split "a" "a" ""
+93: (0,0)(-)(-)(-)(-)(-)(-)(-) true all 0-0 1-2 3-3 repl "<|>a<b|>a<|>" lit "#a#a#" split "a" "a"
+94: no false repl " " lit " " split " "
+95: (3,4) true all 3-4 repl " bb<a|>" lit " bb#" split " bb" ""
+96: (2,3) true all 2-3 repl "b <a|>" lit "b #" split "b " ""
+97: (0,0) true all 0-0 1-2 3-3 4-5 5-6 7-7 repl "<|>b<a|> <|>b<a|><a|>b<|>" lit "#b# #b##b#" split "b" " " "b" "" "b"
+98: (0,0) true all 0-0 1-1 repl "<|>b<|>" lit "#b#" split "b"
+99: (0,1) true all 0-1 2-2 repl "<a|>b<|>" lit "#b#" split "" "b"
+100: no false repl " b" lit " b" split " b"
+101: no false repl "  " lit "  " split "  "
+102: no false repl "baaa" lit "baaa" split "baaa"
+103: (0,3) true all 0-3 3-6 repl "<bba|><aba|>aa" lit "##aa" split "" "" "aa"
+104: no false repl "" lit "" split ""
+105: no false repl "bb a " lit "bb a " split "bb a "
+106: (0,2) true all 0-2 repl "<aa|>" lit "#" split "" ""
+107: no false repl "" lit "" split ""
+108: no false repl " bba" lit " bba" split " bba"
+109: (0,1)(-)(-)(-) true all 0-1 1-4 repl "< |><ba |ba >" lit "##" split "" "" ""
+110: (0,0)(-)(-)(-) true all 0-0 1-1 2-2 repl "<|>a<|>a<|>" lit "#a#a#" split "a" "a"
+111: (0,1)(-)(-)(-) true all 0-1 1-2 2-3 4-4 5-6 repl "<b|>< |>< |>a<|>a<b|>" lit "###a#a#" split "" "" "" "a" "a" ""
+112: (0,6) true all 0-6 repl "<abb aa|>" lit "#" split "" ""
+113: (0,5) true all 0-5 repl "<aaba |>" lit "#" split "" ""
+114: (0,4) true all 0-4 repl "<aba |>" lit "#" split "" ""
+115: no false repl "aa" lit "aa" split "aa"
+116: (0,4) true all 0-4 repl "<bbab|>a " lit "#a " split "" "a "
+117: (0,4) true all 0-4 repl "<bbab|>" lit "#" split "" ""
+118: (0,0) true all 0-0 1-1 2-2 repl "<|>b<|>b<|>" lit "#b#b#" split "b" "b"
+119: (0,0) true all 0-0 1-1 2-2 3-3 4-4 5-5 6-6 7-7 repl "<|>b<|>a<|>a<|> <|>a<|>a<|>b<|>" lit "#b#a#a# #a#a#b#" split "b" "a" "a" " " "a" "a" "b"
+120: (0,0) true all 0-0 repl "<|>" lit "#" split
+121: (1,1)(-)(-)(-)(-)(-) true all 1-1 repl "b<|>" lit "b#" split "b"
+122: (7,8)(8,8)(-)(-)(-)(-) true all 7-8 repl "b bbbba<a|>" lit "b bbbba#" split "b bbbba" ""
+123: (6,6)(-)(-)(-)(-)(-) true all 6-6 repl "bbbba <|>" lit "bbbba #" split "bbbba "
+124: no false repl "" lit "" split ""
+125: (0,5)(0,3)(-)(-)(-)(-)(-)(-)(-)(-)(-) true all 0-5 5-6 repl "<ababa|aba><b|>" lit "##" split "" "" ""
+126: (0,5)(0,3)(-)(-)(-)(-)(-)(-)(-)(-)(-) true all 0-5 repl "<ababa|aba>" lit "#" split "" ""
+127: no false repl "a bbbaaa" lit "a bbbaaa" split "a bbbaaa"
+128: no false repl "" lit "" split ""
+129: no false repl "aa" lit "aa" split "aa"
+130: (0,2) true all 0-2 3-5 repl "<bb|>a<bb|>" lit "#a#" split "" "a" ""
+131: (0,0) true all 0-0 repl "<|>" lit "#" split ""
+132: (0,0) true all 0-0 1-1 2-2 3-4 5-7 repl "<|> <|> <|>a<b|>a<bb|>" lit "# # #a#a#" split " " " " "a" "a" ""
+133: (0,1) true all 0-1 1-2 2-3 3-4 4-5 repl "<b|><a|><b|><a|><b|>" lit "#####" split "" "" "" "" "" ""
+134: (0,1) true all 0-1 repl "< |>" lit "#" split "" ""
+135: (0,1) true all 0-1 repl "<a|>" lit "#" split "" ""
+136: no false repl "b" lit "b" split "b"
+137: no false repl " " lit " " split " "
+138: (0,7)(5,6)(-)(-) true all 0-7 repl "<bbabbab|a>" lit "#" split "" ""
+139: (7,8)(-)(8,8)(-) true all 7-8 repl "aaaaaaa<b|>" lit "aaaaaaa#" split "aaaaaaa" ""
+140: no false repl "baa " lit "baa " split "baa "
+141: (0,1)(-)(1,1)(-) true all 0-1 repl "<b|>" lit "#" split "" ""
+142: no false repl "" lit "" split ""
+143: no false repl " " lit " " split " "
+144: no false repl "ababbab " lit "ababbab " split "ababbab "
+145: no false repl " baa" lit " baa" split " baa"
+146: no false repl "a" lit "a" split "a"
+147: no false repl " aaaaaa" lit " aaaaaa" split " aaaaaa"
+148: (0,1) true all 0-1 repl "<b|>" lit "#" split "" ""
+149: no false repl "" lit "" split ""
+150: no false repl " a" lit " a" split " a"
+151: no false repl "bbbab" lit "bbbab" split "bbbab"
+152: (1,2)(-) true all 1-2 repl "a< |>ba" lit "a#ba" split "a" "ba"
+153: no false repl "" lit "" split ""
+154: (0,0)(-) true all 0-0 1-1 repl "<|> <|>" lit "# #" split " "
+155: (0,0)(-) true all 0-0 1-1 repl "<|>b<|>" lit "#b#" split "b"
+156: (0,5)(-) true all 0-5 6-6 repl "<aaaba|>b<|>" lit "#b#" split "" "b"
+157: no false repl "bab " lit "bab " split "bab "
+158: no false repl "bab ba" lit "bab ba" split "bab ba"
+159: no false repl "a b" lit "a b" split "a b"
+160: (3,6) true all 3-6 repl "baa<bba|>ab" lit "baa#ab" split "baa" "ab"
+161: no false repl "b   b aa" lit "b   b aa" split "b   b aa"
+162: no false repl "aa" lit "aa" split "aa"
+163: (0,0) true all 0-0 repl "<|>" lit "#" split ""
+164: (0,4) true all 0-4 4-6 7-7 8-8 repl "<b aa|><ba|>b<|>b<|>" lit "##b#b#" split "" "" "b" "b"
+165: (0,0) true all 0-0 1-1 2-3 4-4 5-5 repl "<|>b<|> <a|>b<|>b<|>" lit "#b# #b#b#" split "b" " " "b" "b"
+166: no false repl "" lit "" split ""
+167: no false repl " a " lit " a " split " a "
+168: no false repl "aaaaaab " lit "aaaaaab " split "aaaaaab "
+169: (0,1) true all 0-1 repl "<b|>" lit "#" split "" ""
+170: (1,7) true all 1-7 repl "a<ba aaa|>a" lit "a#a" split "a" "a"
+171: no false repl "" lit "" split ""
+172: no false repl "" lit "" split ""
+173: (0,3)(-) true all 0-3 3-4 repl "< aa|><b|>" lit "##" split "" "" ""
+174: no false repl "" lit "" split ""
+175: no false repl "ba" lit "ba" split "ba"
+176: no false repl "" lit "" split ""
+177: no false repl " " lit " " split " "
+178: (0,1)(-)(-) true all 0-1 1-2 repl "< |>< |>" lit "##" split "" "" ""
+179: (0,1)(0,1)(-) true all 0-1 1-2 2-3 3-5 5-6 repl "<a|a><b|><b|><aa|a><b|>" lit "#####" split "" "" "" "" "" ""
+180: no false repl "" lit "" split ""
+181: no false repl "ba a a" lit "ba a a" split "ba a a"
+182: (0,2) true all 0-2 repl "<ab|> aa" lit "# aa" split "" " aa"
+183: no false repl "" lit "" split ""
+184: (1,2) true all 1-2 3-4 repl " <b|>a<b|>a" lit " #a#a" split " " "a" "a"
+185: (1,2) true all 1-2 3-4 repl " <b|>a<b|>" lit " #a#" split " " "a" ""
+186: no false repl " " lit " " split " "
+187: no false repl "baaa b" lit "baaa b" split "baaa b"
+188: no false repl "bb bba" lit "bb bba" split "bb bba"
+189: (2,8)(6,8)(7,7)(7,8) true all 2-8 repl " b<a baba|ba>" lit " b#" split " b" ""
+190: (0,5)(-)(-)(-) true all 0-5 repl "<bbbaa|>b" lit "#b" split "" "b"
+191: no false repl " bb " lit " bb " split " bb "
+192: (1,3)(-)(-)(-) true all 1-3 repl " <aa|>b" lit " #b" split " " "b"
+193: no false repl "" lit "" split ""
+194: (0,2) true all 0-2 2-4 repl "<ab|><ab|>" lit "##" split "" "" ""
+195: no false repl "b" lit "b" split "b"
+196: (0,2)(2,2)(-)(-) true all 0-2 repl "<ba|>" lit "#" split "" ""
+197: (0,3)(3,3)(-)(-) true all 0-3 repl "<aab|>" lit "#" split "" ""
+198: (0,5)(5,5)(-)(-) true all 0-5 repl "< abab|>" lit "#" split "" ""
+199: (0,1) true all 0-1 repl "<a|> " lit "# " split "" " "
+200: (0,0) true all 0-0 repl "<|>" lit "#" split ""
+201: (0,0) true all 0-0 repl "<|> bbbaaa " lit "# bbbaaa " split " bbbaaa "
+202: (0,0)(-)(-)(-)(-) true all 0-0 2-2 3-3 5-5 repl "<|>ab<|> <|>bb<|>" lit "#ab# #bb#" split "ab" " " "bb"
+203: (0,7)(0,7)(1,7)(1,2)(-) true all 0-7 repl "<aabbaba|aabbaba>" lit "#" split "" ""
+204: (1,1)(-)(-)(-)(-) true all 1-1 2-2 repl " <|>a<|>" lit " #a#" split " " "a"
+205: (0,0) true all 0-0 1-1 2-3 4-4 5-5 repl "<|> <|>a<b|> <|>a<|>" lit "# #a# #a#" split " " "a" " " "a"
+206: (0,2) true all 0-2 3-5 6-6 7-7 8-8 repl "<bb|>a<bb|> <|>a<|>a<|>" lit "#a# #a#a#" split "" "a" " " "a" "a"
+207: (0,0) true all 0-0 1-2 repl "<|> <b|>" lit "# #" split " " ""
+208: (0,1)(-)(-) true all 0-1 3-4 4-5 6-7 repl "<b|>a <b|><b|>a<b|>" lit "#a ##a#" split "" "a " "" "a" ""
+209: no false repl "aa" lit "aa" split "aa"
+210: (4,5)(-)(-) true all 4-5 5-6 repl "    <b|><b|> " lit "    ## " split "    " "" " "
+211: no false repl "a " lit "a " split "a "
+212: no false repl "bbabb " lit "bbabb " split "bbabb "
+213: no false repl "aabb" lit "aabb" split "aabb"
+214: no false repl "  aa" lit "  aa" split "  aa"
+215: no false repl "  babbaa" lit "  babbaa" split "  babbaa"
+216: no false repl " b" lit " b" split " b"
+217: no false repl "ba aa  b" lit "ba aa  b" split "ba aa  b"
+218: no false repl "a" lit "a" split "a"
+219: no false repl "" lit "" split ""
+220: no false repl "b" lit "b" split "b"
+221: (0,1) true all 0-1 repl "<a|>b" lit "#b" split "" "b"
+222: (0,1) true all 0-1 1-2 2-3 4-5 5-6 6-7 repl "<a|><a|><a|>b<a|><a|><a|>" lit "###b###" split "" "" "" "b" "" "" ""
+223: no false repl " " lit " " split " "
+224: (1,4)(1,4) true all 1-4 repl "b<aab|aab>" lit "b#" split "b" ""
+225: no false repl "" lit "" split ""
+226: (1,3) true all 1-3 repl "b<aa|>bb" lit "b#bb" split "b" "bb"
+227: (0,1) true all 0-1 repl "<a|>" lit "#" split "" ""
+228: (2,3) true all 2-3 repl " b<a|>" lit " b#" split " b" ""
+229: no false repl "" lit "" split ""
+230: (0,1) true all 0-1 repl "<a|>b" lit "#b" split "" "b"
+231: no false repl " bbb" lit " bbb" split " bbb"
+232: no false repl " " lit " " split " "
+233: (0,1) true all 0-1 repl "<a|>bb" lit "#bb" split "" "bb"
+234: (0,1) true all 0-1 2-3 3-4 6-7 repl "<b|>a< |><b|>ab< |>" lit "#a##ab#" split "" "a" "" "ab" ""
+235: no false repl "baa ab " lit "baa ab " split "baa ab "
+236: no false repl "bab a bb" lit "bab a bb" split "bab a bb"
+237: no false repl "aaaab" lit "aaaab" split "aaaab"
+238: (0,1) true all 0-1 1-2 repl "<b|><a|>" lit "##" split "" "" ""
+239: (0,1) true all 0-1 1-2 repl "<b|><b|>" lit "##" split "" "" ""
+240: (0,1) true all 0-1 1-2 2-3 3-4 4-5 5-6 repl "<b|><a|>< |><b|><b|>< |>" lit "######" split "" "" "" "" "" "" ""
+241: (0,1)(-)(-)(-) true all 0-1 repl "<a|> " lit "# " split "" " "
+242: (0,5)(0,2)(0,2)(3,5) true all 0-5 repl "<baabb|ba>" lit "#" split "" ""
+243: no false repl "bb" lit "bb" split "bb"
+244: no false repl "" lit "" split ""
+245: (0,1) true all 0-1 repl "<a|>" lit "#" split "" ""
+246: (0,2) true all 0-2 repl "<aa|> " lit "# " split "" " "
+247: no false repl "bbbb" lit "bbbb" split "bbbb"
+248: (0,6)(0,6)(0,5)(3,5) true all 0-6 repl "<  bab |  bab >" lit "#" split "" ""
+249: (0,6)(0,6)(0,5)(2,4) true all 0-6 repl "<b abba|b abba>" lit "#" split "" ""
+250: (0,1) true all 0-1 1-2 repl "<a|><a|> b" lit "## b" split "" "" " b"
+251: no false repl "" lit "" split ""
+252: no false repl "b " lit "b " split "b "
+253: (0,0) true all 0-0 1-1 2-2 3-3 repl "<|> <|>b<|>a<|>" lit "# #b#a#" split " " "b" "a"
+254: (0,0) true all 0-0 1-1 2-2 3-3 4-4 5-5 6-6 7-7 repl "<|>b<|>b<|>a<|>b<|>a<|>a<|> <|>" lit "#b#b#a#b#a#a# #" split "b" "b" "a" "b" "a" "a" " "
+255: (0,0) true all 0-0 1-1 2-2 3-3 4-4 5-5 6-6 repl "<|>a<|>a<|>b<|>a<|>b<|>a<|>" lit "#a#a#b#a#b#a#" split "a" "a" "b" "a" "b" "a"
+256: no false repl "" lit "" split ""
+257: (0,1)(-)(-)(-)(-)(-)(-)(-)(-)(-)(-) true all 0-1 1-2 repl "<b|><a|>" lit "##" split "" "" ""
+258: (0,1)(-)(-)(-)(-)(-)(-)(-)(-)(-)(-) true all 0-1 1-3 3-4 4-5 5-6 6-7 7-8 repl "< |><aa|><b|><b|>< |><a|>< |>" lit "#######" split "" "" "" "" "" "" "" ""
+259: no false repl "" lit "" split ""
+260: (0,1) true all 0-1 1-2 2-3 3-4 4-5 repl "<a|>< |><b|>< |><a|>" lit "#####" split "" "" "" "" "" ""
+261: (0,1) true all 0-1 1-2 2-3 3-4 repl "<a|><b|><b|><a|>" lit "####" split "" "" "" "" ""
+262: no false repl "ab aa" lit "ab aa" split "ab aa"
+263: no false repl "b  b " lit "b  b " split "b  b "
+264: no false repl " abb" lit " abb" split " abb"
+265: no false repl "a" lit "a" split "a"
+266: no false repl "b" lit "b" split "b"
+267: (0,1) true all 0-1 repl "< |>" lit "#" split "" ""
+268: (0,8)(4,7)(4,5) true all 0-8 repl "<aa baa a|aa >" lit "#" split "" ""
+269: (0,0)(-)(-) true all 0-0 1-7 repl "<|>b<b b ba|>" lit "#b#" split "b" ""
+270: (0,3)(0,2)(0,1) true all 0-3 repl "<abb|ab>" lit "#" split "" ""
+271: (4,5)(-)(-) true all 4-5 repl "a a <b|>" lit "a a #" split "a a " ""
+272: (2,3)(-)(-) true all 2-3 4-5 6-7 repl "aa<b|> <b|>a<b|>" lit "aa# #a#" split "aa" " " "a" ""
+273: no false repl "a" lit "a" split "a"
+274: (4,7)(4,6)(-)(7,7)(-)(-)(-) true all 4-7 repl "a  a<bba|bb>b" lit "a  a#b" split "a  a" "b"
+275: no false repl "a " lit "a " split "a "
+276: (0,3)(0,2)(-)(3,3)(-)(-)(-) true all 0-3 repl "<bba|bb> b" lit "# b" split "" " b"
+277: no false repl "" lit "" split ""
+278: (0,3) true all 0-3 repl "<aaa|>ba" lit "#ba" split "" "ba"
+279: no false repl " abba" lit " abba" split " abba"
+280: (0,1)(-)(-)(-)(-)(-)(-)(-) true all 0-1 2-2 3-3 repl "<b|>a<|>a<|>" lit "#a#a#" split "" "a" "a"
+281: (0,2)(-)(-)(-)(-)(-)(-)(-) true all 0-2 3-3 4-4 repl "<bb|>a<|>a<|>" lit "#a#a#" split "" "a" "a"
+282: (0,0)(-)(-)(-)(-)(-)(-)(-) true all 0-0 1-1 2-2 3-5 6-6 7-7 8-8 repl "<|> <|>a<|> <bb|>a<|>a<|>a<|>" lit "# #a# #a#a#a#" split " " "a" " " "a" "a" "a"
+283: (0,2)(-) true all 0-2 2-8 repl "<bb|><abb bb|>" lit "##" split "" "" ""
+284: (0,2)(-) true all 0-2 2-7 repl "<bb|><abba |>a" lit "##a" split "" "" "a"
+285: no false repl "" lit "" split ""
+286: (0,1)(0,0)(-) true all 0-1 repl "<b|>" lit "#" split "" ""
+287: (0,3)(0,2)(1,2) true all 0-3 repl "<aaa|aa>" lit "#" split "" ""
+288: (0,7)(0,2)(0,2) true all 0-7 repl "<ba a aa|ba>" lit "#" split "" ""
+289: (0,0)(-)(-) true all 0-0 1-1 repl "<|>a<|>" lit "#a#" split "a"
+290: (0,0)(-)(-) true all 0-0 1-1 2-2 3-3 repl "<|>b<|>b<|>b<|>" lit "#b#b#b#" split "b" "b" "b"
+291: (0,0)(-)(-) true all 0-0 1-1 repl "<|> <|>" lit "# #" split " "
+292: (0,3) true all 0-3 5-8 repl "<aaa|>bb<baa|>" lit "#bb#" split "" "bb" ""
+293: (1,3) true all 1-3 repl " <aa|>" lit " #" split " " ""
+294: (0,1) true all 0-1 repl "<a|>bbb" lit "#bbb" split "" "bbb"
+295: no false repl "a a" lit "a a" split "a a"
+296: (0,2)(-)(-) true all 0-2 repl "<ab|>" lit "#" split "" ""
+297: no false repl "bb bb ba" lit "bb bb ba" split "bb bb ba"
+298: no false repl "bababba" lit "bababba" split "bababba"
+299: no false repl "aa" lit "aa" split "aa"
+300: no false repl "ab" lit "ab" split "ab"
+301: no false repl "" lit "" split ""
+302: (0,3) true all 0-3 4-6 repl "<baa|>b<ba|>b" lit "#b#b" split "" "b" "b"
+303: no false repl "a" lit "a" split "a"
+304: (0,2) true all 0-2 3-3 repl "<aa|> <|>" lit "# #" split "" " "
+305: (0,4) true all 0-4 repl "<aaaa|>" lit "#" split "" ""
+306: (0,7) true all 0-7 repl "<bababaa|>" lit "#" split "" ""
+307: (0,2)(-)(-)(-) true all 0-2 2-4 repl "<ba|><aa|>b  b" lit "##b  b" split "" "" "b  b"
+308: (0,2)(-)(-)(-) true all 0-2 repl "<ba|>b" lit "#b" split "" "b"
+309: no false repl "b" lit "b" split "b"
+310: no false repl " " lit " " split " "
+311: (1,2) true all 1-2 2-3 repl " <b|><b|>" lit " ##" split " " "" ""
+312: (0,1) true all 0-1 2-3 repl "<b|> <b|>" lit "# #" split "" " " ""
+313: (0,0)(-) true all 0-0 1-1 repl "<|>a<|>" lit "#a#" split "a"
+314: (0,0)(-) true all 0-0 1-1 2-2 3-3 4-4 repl "<|>a<|> <|> <|>b<|>" lit "#a# # #b#" split "a" " " " " "b"
+315: (0,0)(-) true all 0-0 repl "<|>" lit "#" split ""
+316: (0,3)(1,3)(2,3) true all 0-3 repl "<baa|aa>" lit "#" split "" ""
+317: (4,6)(5,6)(5,6) true all 4-6 repl "aaaa<ba|a>" lit "aaaa#" split "aaaa" ""
+318: no false repl "" lit "" split ""
+319: no false repl " aaa" lit " aaa" split " aaa"
+320: no false repl "a a " lit "a a " split "a a "
+321: (0,1) true all 0-1 1-2 repl "<b|><b|>" lit "##" split "" "" ""
+322: no false repl "a b    b" lit "a b    b" split "a b    b"
+323: no false repl "" lit "" split ""
+324: no false repl "bbabb" lit "bbabb" split "bbabb"
+325: (0,1)(-)(-)(-)(-)(-)(-) true all 0-1 repl "<a|> " lit "# " split "" " "
+326: (0,1)(-)(-)(-)(-)(-)(-) true all 0-1 repl "<a|>  b" lit "#  b" split "" "  b"
+327: (2,3)(-)(-)(-)(-)(-)(-) true all 2-3 5-6 repl "bb<a|>  <a|>" lit "bb#  #" split "bb" "  " ""
+328: no false repl "bb" lit "bb" split "bb"
+329: no false repl "a bb" lit "a bb" split "a bb"
+330: no false repl "aaab a" lit "aaab a" split "aaab a"
+331: (0,4)(-) true all 0-4 repl "<babb|>" lit "#" split "" ""
+332: no false repl "" lit "" split ""
+333: no false repl "b" lit "b" split "b"
+334: no false repl "" lit "" split ""
+335: (0,2)(-)(-)(-) true all 0-2 2-4 6-7 repl "< a|><ba|>b <b|>" lit "##b #" split "" "" "b " ""
+336: (1,3)(-)(-)(-) true all 1-3 repl " < a|>" lit " #" split " " ""
+337: (0,0)(-) true all 0-0 1-1 2-2 3-3 4-4 repl "<|>b<|> <|>a<|>a<|>" lit "#b# #a#a#" split "b" " " "a" "a"
+338: (0,0)(-) true all 0-0 1-1 2-2 3-3 4-4 5-5 6-6 repl "<|> <|> <|>a<|>a<|>a<|>b<|>" lit "# # #a#a#a#b#" split " " " " "a" "a" "a" "b"
+339: (0,0)(-) true all 0-0 1-1 2-2 3-3 4-4 repl "<|>a<|> <|>a<|>b<|>" lit "#a# #a#b#" split "a" " " "a" "b"
+340: no false repl "b" lit "b" split "b"
+341: no false repl " a " lit " a " split " a "
+342: no false repl "aaa" lit "aaa" split "aaa"
+343: (1,1)(-) true all 1-1 2-5 6-6 8-8 repl "b<|>b<baa|baa>b<|>b <|>" lit "b#b#b#b #" split "b" "b" "b" "b "
+344: (0,1)(-) true all 0-1 2-4 repl "<a|>b<aa|>" lit "#b#" split "" "b" ""
+345: (0,3)(0,3) true all 0-3 repl "<aaa|aaa>b" lit "#b" split "" "b"
+346: (0,2)(0,2) true all 0-2 repl "<ab|ab>a" lit "#a" split "" "a"
+347: no false repl " bbbb" lit " bbbb" split " bbbb"
+348: no false repl " abbb a " lit " abbb a " split " abbb a "
+349: no false repl " aaaa  b" lit " aaaa  b" split " aaaa  b"
+350: no false repl "b " lit "b " split "b "
+351: no false repl "bbaaa" lit "bbaaa" split "bbaaa"
+352: no false repl "a a" lit "a a" split "a a"
+353: no false repl "a" lit "a" split "a"
+354: (0,2)(0,2)(0,2) true all 0-2 3-5 repl "<ab|ab>b<ab|ab>b" lit "#b#b" split "" "b" "b"
+355: no false repl "bab a " lit "bab a " split "bab a "
+356: no false repl " baaaaa" lit " baaaaa" split " baaaaa"
+357: no false repl "bab" lit "bab" split "bab"
+358: no false repl "" lit "" split ""
+359: no false repl "a" lit "a" split "a"
+360: no false repl "   bbabb" lit "   bbabb" split "   bbabb"
+361: (0,5) true all 0-5 repl "<b b a|>" lit "#" split "" ""
+362: (0,6) true all 0-6 repl "<bbbbba|>" lit "#" split "" ""
+363: (0,5) true all 0-5 repl "<bbb a|> " lit "# " split "" " "
+364: (3,6) true all 3-6 repl "bbb<aba|> " lit "bbb# " split "bbb" " "
+365: (0,4) true all 0-4 repl "<aaaa|>" lit "#" split "" ""
+366: (1,6) true all 1-6 repl "b<abaaa|>" lit "b#" split "b" ""
+367: (0,1)(-)(-)(-) true all 0-1 5-6 repl "<b|>a a <b|>" lit "#a a #" split "" "a a " ""
+368: (0,1)(-)(-)(-) true all 0-1 1-2 2-3 4-5 repl "<b|><b|><b|>a<b|>aa " lit "###a#aa " split "" "" "" "a" "aa "
+369: (0,1)(-)(-)(-) true all 0-1 1-2 2-7 repl "<b|><b|><abbba|abbb>" lit "###" split "" "" "" ""
+370: no false repl "aa " lit "aa " split "aa "
+371: no false repl "bbaaba" lit "bbaaba" split "bbaaba"
+372: no false repl "b b" lit "b b" split "b b"
+373: no false repl "bbbbb   " lit "bbbbb   " split "bbbbb   "
+374: no false repl "babaabb" lit "babaabb" split "babaabb"
+375: no false repl "b baaab " lit "b baaab " split "b baaab "
+376: no false repl "aab a" lit "aab a" split "aab a"
+377: no false repl "ab aa   " lit "ab aa   " split "ab aa   "
+378: no false repl "" lit "" split ""
+379: no false repl "" lit "" split ""
+380: no false repl "aaa  a" lit "aaa  a" split "aaa  a"
+381: no false repl "ab" lit "ab" split "ab"
+382: (0,5)(1,3) true all 0-5 repl "<ab ba|b >" lit "#" split "" ""
+383: (0,7)(1,5) true all 0-7 repl "<aba aba|ba a>" lit "#" split "" ""
+384: no false repl "" lit "" split ""
+385: no false repl "a ab" lit "a ab" split "a ab"
+386: no false repl "bb baab" lit "bb baab" split "bb baab"
+387: no false repl "a" lit "a" split "a"
+388: no false repl "baaa" lit "baaa" split "baaa"
+389: no false repl " aa" lit " aa" split " aa"
+390: (0,4) true all 0-4 repl "<bba |>" lit "#" split "" ""
+391: no false repl "aaa" lit "aaa" split "aaa"
+392: no false repl "   aa b" lit "   aa b" split "   aa b"
+393: no false repl "aaa baa" lit "aaa baa" split "aaa baa"
+394: no false repl "" lit "" split ""
+395: (1,4) true all 1-4 repl "b<aab|>" lit "b#" split "b" ""
+396: no false repl "aa" lit "aa" split "aa"
+397: no false repl "" lit "" split ""
+398: (0,3)(1,3) true all 0-3 3-5 repl "<ba |a ><b |b >" lit "##" split "" "" ""
+399: no false repl "a" lit "a" split "a"
+400: no false repl " aa" lit " aa" split " aa"
+401: (0,5)(-)(-)(-) true all 0-5 repl "<ababb|> b" lit "# b" split "" " b"
+402: no false repl "baaab aa" lit "baaab aa" split "baaab aa"
+403: (0,1)(-)(-)(-) true all 0-1 1-3 repl "<b|><aa|>" lit "##" split "" "" ""
+404: no false repl " " lit " " split " "
+405: no false repl "" lit "" split ""
+406: (0,0) true all 0-0 1-1 2-3 4-4 5-5 6-7 repl "<|>a<|>a<b|>a<|>a<|>a<b|>" lit "#a#a#a#a#a#" split "a" "a" "a" "a" "a" ""
+407: (0,0) true all 0-0 1-1 2-2 3-7 repl "<|> <|> <|>a<bbbb|>" lit "# # #a#" split " " " " "a" ""
+408: (0,0) true all 0-0 1-1 repl "<|>a<|>" lit "#a#" split "a"
+409: no false repl " " lit " " split " "
+410: no false repl "" lit "" split ""
+411: (2,6) true all 2-6 repl "b <aaba|> " lit "b # " split "b " " "
+412: (0,1) true all 0-1 repl "<a|>  b" lit "#  b" split "" "  b"
+413: no false repl "" lit "" split ""
+414: (0,1) true all 0-1 1-2 repl "<a|><a|>" lit "##" split "" "" ""
+415: (0,0) true all 0-0 6-6 repl "<|>bbbabb<|>" lit "#bbbabb#" split "bbbabb"
+416: (0,0) true all 0-0 1-1 2-2 3-3 repl "<|>a<|> <|>a<|>" lit "#a# #a#" split "a" " " "a"
+417: (0,0) true all 0-0 6-6 repl "<|>babaaa<|> " lit "#babaaa# " split "babaaa" " "
+418: no false repl " " lit " " split " "
+419: (1,2) true all 1-2 repl "b<a|>bb" lit "b#bb" split "b" "bb"
+420: no false repl "b" lit "b" split "b"
+421: (0,0)(-)(-)(-)(-)(-) true all 0-0 1-1 2-2 repl "<|>b<|> <|>" lit "#b# #" split "b" " "
+422: (0,0)(-)(-)(-)(-)(-) true all 0-0 1-4 5-5 6-6 7-7 repl "<|> <aba|a> <|>b<|>a<|>" lit "# # #b#a#" split " " " " "b" "a"
+423: (0,0)(-)(-)(-)(-)(-) true all 0-0 1-1 2-5 6-6 7-7 8-8 repl "<|> <|> <aa |aa> <|>b<|>a<|>" lit "# # # #b#a#" split " " " " " " "b" "a"
+424: (0,0)(0,0) true all 0-0 1-2 repl "<|>a<b|b>" lit "#a#" split "a" ""
+425: (0,0)(0,0) true all 0-0 repl "<|>" lit "#" split ""
+426: (0,0)(0,0) true all 0-0 1-1 2-2 3-3 repl "<|>a<|>a<|>a<|>" lit "#a#a#a#" split "a" "a" "a"
+427: no false repl "b" lit "b" split "b"
+428: no false repl "   aa" lit "   aa" split "   aa"
+429: no false repl "aaaabaaa" lit "aaaabaaa" split "aaaabaaa"
+430: (0,7) true all 0-7 repl "<b    ba|>" lit "#" split "" ""
+431: (0,4) true all 0-4 repl "<aaaa|>" lit "#" split "" ""
+432: (0,8) true all 0-8 repl "<aababbbb|>" lit "#" split "" ""
+433: no false repl "b  ab" lit "b  ab" split "b  ab"
+434: no false repl "a" lit "a" split "a"
+435: no false repl "" lit "" split ""
+436: (4,6) true all 4-6 repl "  ba<bb|> a" lit "  ba# a" split "  ba" " a"
+437: no false repl "b" lit "b" split "b"
+438: (4,5) true all 4-5 repl "ba a<b|>aa " lit "ba a#aa " split "ba a" "aa "
+439: (0,5)(-) true all 0-5 6-6 8-8 repl "<b bb |>a<|>a <|>" lit "#a#a #" split "" "a" "a "
+440: (0,0)(-) true all 0-0 1-1 2-7 repl "<|> <|> <babbb|>" lit "# # #" split " " " " ""
+441: (1,1)(-) true all 1-1 2-2 repl "b<|>a<|>a" lit "b#a#a" split "b" "a" "a"
+442: (0,1) true all 0-1 2-2 repl "<a|>b<|>" lit "#b#" split "" "b"
+443: (0,0) true all 0-0 1-2 3-3 4-4 5-5 6-7 8-8 repl "<|>b<a|>b<|> <|>b<|>b<a|> <|>" lit "#b#b# #b#b# #" split "b" "b" " " "b" "b" " "
+444: (0,0) true all 0-0 1-2 repl "<|> <a|>" lit "# #" split " " ""
+445: (0,1)(-) true all 0-1 2-5 6-6 7-7 repl "<b|>a<bbb|> <|>a<|>" lit "#a# #a#" split "" "a" " " "a"
+446: (0,0)(-) true all 0-0 1-2 repl "<|>a<b|>" lit "#a#" split "a" ""
+447: (0,0)(-) true all 0-0 1-3 4-5 6-7 8-8 repl "<|> <bb|>a<b|>a<b|> <|>" lit "# #a#a# #" split " " "a" "a" " "
+448: no false repl "" lit "" split ""
+449: (0,5)(0,1)(-)(4,5) true all 0-5 repl "<aba a|a>" lit "#" split "" ""
+450: no false repl "b" lit "b" split "b"
+451: (0,0)(-)(-) true all 0-0 1-1 2-2 3-3 4-4 5-5 6-6 7-7 repl "<|>b<|>a<|>a<|> <|>b<|>a<|>a<|>" lit "#b#a#a# #b#a#a#" split "b" "a" "a" " " "b" "a" "a"
+452: (0,0)(-)(-) true all 0-0 1-1 2-2 3-3 repl "<|> <|>a<|>b<|>" lit "# #a#b#" split " " "a" "b"
+453: (0,0)(-)(-) true all 0-0 1-1 2-2 3-3 repl "<|> <|>b<|>b<|>" lit "# #b#b#" split " " "b" "b"
+454: no false repl "a" lit "a" split "a"
+455: (2,4)(4,4)(-)(-)(-)(-)(-)(-) true all 2-4 repl "aa< a|>" lit "aa#" split "aa" ""
+456: no false repl "aaabb " lit "aaabb " split "aaabb "
+457: (0,1)(-) true all 0-1 repl "<a|>" lit "#" split "" ""
+458: (0,2)(-) true all 0-2 2-3 3-4 repl "<ab|><b|><a|>" lit "###" split "" "" "" ""
+459: (0,1)(-) true all 0-1 repl "<a|>" lit "#" split "" ""
+460: (0,2)(-)(-)(-) true all 0-2 2-3 3-5 5-7 repl "<bb|><a|>< b|><ba|>b" lit "####b" split "" "" "" "" "b"
+461: (0,1)(-)(-)(0,0) true all 0-1 3-5 repl "<a|>  <aa|>" lit "#  #" split "" "  " ""
+462: (0,2)(-)(-)(-) true all 0-2 2-4 5-7 repl "<bb|><ba|> < b|>b" lit "## #b" split "" "" " " "b"
+463: no false repl "a aa" lit "a aa" split "a aa"
+464: (1,2) true all 1-2 repl " <b|> " lit " # " split " " " "
+465: (0,1) true all 0-1 1-2 repl "<b|><b|>" lit "##" split "" "" ""
+466: (2,3)(-)(-)(-) true all 2-3 repl "bb<a|>b" lit "bb#b" split "bb" "b"
+467: no false repl "b" lit "b" split "b"
+468: (4,5)(-)(-)(-) true all 4-5 5-6 6-7 repl "bbbb<a|><a|><a|>" lit "bbbb###" split "bbbb" "" "" ""
+469: (0,1) true all 0-1 3-5 repl "<b|>aa<bb|>" lit "#aa#" split "" "aa" ""
+470: (1,2) true all 1-2 4-5 repl "a<b|>aa<b|>a" lit "a#aa#a" split "a" "aa" "a"
+471: (0,2) true all 0-2 repl "<bb|>" lit "#" split "" ""
+472: (0,0) true all 0-0 repl "<|>aaab aa" lit "#aaab aa" split "aaab aa"
+473: (0,0) true all 0-0 repl "<|>b" lit "#b" split "b"
+474: (0,0) true all 0-0 repl "<|>b b" lit "#b b" split "b b"
+475: (0,3)(1,3) true all 0-3 repl "<b a| a>  bb" lit "#  bb" split "" "  bb"
+476: (0,2)(0,2) true all 0-2 repl "<aa|aa> " lit "# " split "" " "
+477: (0,3)(0,3) true all 0-3 3-4 repl "<aaa|aaa><a|a>" lit "##" split "" "" ""
+478: no false repl "aaa a" lit "aaa a" split "aaa a"
+479: no false repl "bbbbb" lit "bbbbb" split "bbbbb"
+480: no false repl "" lit "" split ""
+481: (0,1) true all 0-1 repl "<a|>" lit "#" split "" ""
+482: (0,1) true all 0-1 1-2 2-3 3-4 4-5 5-6 6-7 7-8 repl "<b|>< |><a|><a|><b|><b|><a|><a|>" lit "########" split "" "" "" "" "" "" "" "" ""
+483: (0,1) true all 0-1 1-2 2-3 3-4 4-5 5-6 repl "<b|><b|><b|><a|><b|><b|>" lit "######" split "" "" "" "" "" "" ""
+484: (0,3)(0,2)(2,2)(2,2) true all 0-3 3-5 6-7 repl "< ab| a><aa|> <a|> " lit "## # " split "" "" " " " "
+485: no false repl "" lit "" split ""
+486: (2,7)(2,5)(4,5)(5,6) true all 2-7 repl "  <  bbb|  b>" lit "  #" split "  " ""
+487: (0,5) true all 0-5 6-8 repl "< b  b|>a< b|>" lit "#a#" split "" "a" ""
+488: (0,0) true all 0-0 1-1 2-4 5-5 6-6 repl "<|>a<|>a<bb|>a<|>a<|>" lit "#a#a#a#a#" split "a" "a" "a" "a"
+489: (0,2) true all 0-2 repl "<bb|>" lit "#" split "" ""
+490: no false repl "" lit "" split ""
+491: no false repl " a" lit " a" split " a"
+492: no false repl "" lit "" split ""
+493: no false repl "b" lit "b" split "b"
+494: no false repl "aabbab" lit "aabbab" split "aabbab"
+495: no false repl "abbb" lit "abbb" split "abbb"
+496: no false repl "  b" lit "  b" split "  b"
+497: (3,5) true all 3-5 repl " bb<aa|>bbb" lit " bb#bbb" split " bb" "bbb"
+498: (0,3) true all 0-3 repl "<aaa|>bab" lit "#bab" split "" "bab"
+499: (0,3)(1,3)(-)(-)(-)(-)(-)(-) true all 0-3 3-7 repl "<bb |b ><baaa|>" lit "##" split "" "" ""
+500: (0,6)(-)(0,6)(4,5)(-)(-)(-)(-) true all 0-6 repl "<b bb a|>" lit "#" split "" ""
+501: (0,1)(-)(-)(-)(-)(-)(-)(-) true all 0-1 1-6 6-7 repl "<a|><b  ba|><a|>b" lit "###b" split "" "" "" "b"
+502: no false repl "b " lit "b " split "b "
+503: no false repl " b" lit " b" split " b"
+504: no false repl "b aaa" lit "b aaa" split "b aaa"
+505: no false repl "ab b" lit "ab b" split "ab b"
+506: (0,5) true all 0-5 repl "<aaa  |>" lit "#" split "" ""
+507: (4,8) true all 4-8 repl " bbb<aaab|>" lit " bbb#" split " bbb" ""
+508: (1,2) true all 1-2 5-6 6-7 repl "b<a|>b b<a|><a|>" lit "b#b b##" split "b" "b b" "" ""
+509: (2,3) true all 2-3 4-5 5-6 repl "bb<a|> <a|><a|>bb" lit "bb# ##bb" split "bb" " " "" "bb"
+510: no false repl " " lit " " split " "
+511: no false repl "" lit "" split ""
+512: (0,2) true all 0-2 repl "<ba|> bab a" lit "# bab a" split "" " bab a"
+513: (0,2) true all 0-2 repl "<ba|> b" lit "# b" split "" " b"
+514: (0,1)(-)(-)(-)(-)(-)(-)(-) true all 0-1 5-7 repl "<a|>b bb<aa|>" lit "#b bb#" split "" "b bb" ""
+515: (0,2)(-)(-)(-)(-)(-)(-)(-) true all 0-2 2-3 repl "<aa|><a|>bb" lit "##bb" split "" "" "bb"
+516: (0,2)(-)(-)(-)(-)(-)(-)(-) true all 0-2 repl "<aa|>" lit "#" split "" ""
+517: no false repl "" lit "" split ""
+518: no false repl "bbb" lit "bbb" split "bbb"
+519: no false repl "b  abaa" lit "b  abaa" split "b  abaa"
+520: no false repl "" lit "" split ""
+521: (0,1) true all 0-1 1-2 repl "< |>< |>b" lit "##b" split "" "" "b"
+522: (0,1) true all 0-1 repl "< |>" lit "#" split "" ""
+523: (0,7)(-)(-)(-) true all 0-7 repl "<aaaa bb|>" lit "#" split "" ""
+524: no false repl " " lit " " split " "
+525: (0,5)(-)(-)(-) true all 0-5 repl "<ba ba|>" lit "#" split "" ""
+526: (0,0) true all 0-0 1-1 2-2 3-3 repl "<|>b<|>a<|> <|>" lit "#b#a# #" split "b" "a" " "
+527: (0,0) true all 0-0 1-1 2-2 3-3 4-4 repl "<|>b<|> <|> <|> <|>" lit "#b# # # #" split "b" " " " " " "
+528: (0,0) true all 0-0 1-1 2-2 3-3 4-4 5-5 6-6 7-7 8-8 repl "<|>a<|>b<|>b<|>a<|>b<|>b<|>a<|>b<|>" lit "#a#b#b#a#b#b#a#b#" split "a" "b" "b" "a" "b" "b" "a" "b"
+529: no false repl " ba" lit " ba" split " ba"
+530: no false repl "bbbbb" lit "bbbbb" split "bbbbb"
+531: no false repl "a ab" lit "a ab" split "a ab"
+532: no false repl "a" lit "a" split "a"
+533: (0,5)(-)(3,5)(-)(4,5) true all 0-5 repl "<abbab|>" lit "#" split "" ""
+534: no false repl " " lit " " split " "
+535: no false repl " ab" lit " ab" split " ab"
+536: no false repl " b a" lit " b a" split " b a"
+537: no false repl "a" lit "a" split "a"
+538: no false repl "b" lit "b" split "b"
+539: no false repl " bba" lit " bba" split " bba"
+540: no false repl "   " lit "   " split "   "
+541: no false repl "ababa bb" lit "ababa bb" split "ababa bb"
+542: no false repl "b " lit "b " split "b "
+543: no false repl "" lit "" split ""
+544: (0,0)(-)(-)(-)(-)(-) true all 0-0 1-1 2-2 3-3 4-4 5-5 6-6 7-7 repl "<|>b<|> <|>b<|>a<|>b<|>b<|>b<|>" lit "#b# #b#a#b#b#b#" split "b" " " "b" "a" "b" "b" "b"
+545: (0,0)(-)(-)(-)(-)(-) true all 0-0 1-1 2-2 3-3 4-4 repl "<|> <|>a<|>b<|>b<|>" lit "# #a#b#b#" split " " "a" "b" "b"
+546: (0,0)(-)(-)(-)(-)(-) true all 0-0 1-1 2-2 3-3 4-4 5-5 6-6 7-7 8-8 repl "<|>a<|>a<|>b<|>b<|>a<|> <|>a<|>a<|>" lit "#a#a#b#b#a# #a#a#" split "a" "a" "b" "b" "a" " " "a" "a"
+547: no false repl "aaaaab" lit "aaaaab" split "aaaaab"
+548: (0,2)(0,1) true all 0-2 2-5 repl "<ba|b><ab |b>a" lit "##a" split "" "" "a"
+549: no false repl "b" lit "b" split "b"
+550: (0,4)(-) true all 0-4 repl "< aba|>a " lit "#a " split "" "a "
+551: (0,5)(0,5) true all 0-5 repl "<b ba |b ba >" lit "#" split "" ""
+552: no false repl " " lit " " split " "
+553: no false repl "babbaaab" lit "babbaaab" split "babbaaab"
+554: no false repl " ba" lit " ba" split " ba"
+555: no false repl "bab" lit "bab" split "bab"
+556: (0,4)(1,4)(-)(-) true all 0-4 5-5 6-6 repl "<bbba|bba>a<|>a<|>b" lit "#a#a#b" split "" "a" "a" "b"
+557: (0,1)(-)(-)(-) true all 0-1 2-3 4-4 repl "<a|> <a|>b<|>a" lit "# #b#a" split "" " " "b" "a"
+558: (1,1)(-)(-)(-) true all 1-1 2-2 3-3 4-4 repl "b<|>b<|>a<|>a<|>b" lit "b#b#a#a#b" split "b" "b" "a" "a" "b"
+559: (0,1) true all 0-1 3-4 repl "<b|>a <b|>aa a" lit "#a #aa a" split "" "a " "aa a"
+560: (0,1) true all 0-1 1-2 5-6 repl "<b|><b|>  a<b|>aa" lit "##  a#aa" split "" "" "  a" "aa"
+561: no false repl "" lit "" split ""
+562: (4,6)(5,6) true all 4-6 7-8 repl "bb  <aa|a> <a|a>" lit "bb  # #" split "bb  " " " ""
+563: (0,2)(1,2) true all 0-2 repl "<aa|a>" lit "#" split "" ""
+564: no false repl "" lit "" split ""
+565: no false repl "bbba" lit "bbba" split "bbba"
+566: no false repl "bb" lit "bb" split "bb"
+567: no false repl "" lit "" split ""
+568: (0,2)(1,2) true all 0-2 repl "<bb|b>a a" lit "#a a" split "" "a a"
+569: (4,6)(5,6) true all 4-6 repl "aa  < b|b>" lit "aa  #" split "aa  " ""
+570: (0,5)(1,5) true all 0-5 repl "<bbbbb|bbbb> " lit "# " split "" " "
+571: (0,0)(-)(-) true all 0-0 1-1 2-2 3-3 repl "<|> <|>b<|>a<|>" lit "# #b#a#" split " " "b" "a"
+572: (0,0)(-)(-) true all 0-0 1-1 2-2 3-3 repl "<|>a<|>a<|> <|>" lit "#a#a# #" split "a" "a" " "
+573: (0,0)(-)(-) true all 0-0 1-1 2-2 3-3 4-4 5-5 repl "<|>a<|> <|>a<|> <|>b<|>" lit "#a# #a# #b#" split "a" " " "a" " " "b"
+574: (0,2)(0,1)(-)(-)(-)(-) true all 0-2 2-3 repl "<bb|b><b|>" lit "##" split "" "" ""
+575: (0,2)(0,1)(-)(-)(-)(-) true all 0-2 3-6 7-8 repl "<bb|b>a< bb| b> <b|>" lit "#a# #" split "" "a" " " ""
+576: no false repl "a" lit "a" split "a"
+577: (0,1) true all 0-1 1-2 repl "<a|><b|>" lit "##" split "" "" ""
+578: (0,1) true all 0-1 1-2 repl "<a|><a|> " lit "## " split "" "" " "
+579: (0,1) true all 0-1 2-3 4-5 5-6 6-7 7-8 repl "<b|> <a|> <b|><a|><b|><a|>" lit "# # ####" split "" " " " " "" "" "" ""
+580: (4,5) true all 4-5 repl "aa a<b|>" lit "aa a#" split "aa a" ""
+581: (1,2) true all 1-2 2-3 3-4 repl "a<b|><b|><b|>" lit "a###" split "a" "" "" ""
+582: (0,1) true all 0-1 3-4 6-7 7-8 repl "<b|> a<b|>aa<b|><b|>" lit "# a#aa##" split "" " a" "aa" "" ""
+583: (0,1) true all 0-1 1-2 repl "<b|><b|>" lit "##" split "" "" ""
+584: (0,1) true all 0-1 4-5 5-6 repl "<b|>  a<b|><b|> " lit "#  a## " split "" "  a" "" " "
+585: (1,2) true all 1-2 repl "a<b|>" lit "a#" split "a" ""
+586: (0,0) true all 0-0 1-1 2-2 repl "<|> <|>a<|>" lit "# #a#" split " " "a"
+587: (0,0) true all 0-0 1-1 repl "<|>b<|>" lit "#b#" split "b"
+588: (0,0) true all 0-0 1-1 2-2 3-3 4-4 repl "<|>b<|>a<|>a<|> <|>" lit "#b#a#a# #" split "b" "a" "a" " "
+589: no false repl "aa " lit "aa " split "aa "
+590: no false repl " a" lit " a" split " a"
+591: (2,5) true all 2-5 repl "aa<a b|>" lit "aa#" split "aa" ""
+592: (1,3) true all 1-3 repl "b<aa|>" lit "b#" split "b" ""
+593: no false repl "abab" lit "abab" split "abab"
+594: (3,6) true all 3-6 repl "ba <aaa|>" lit "ba #" split "ba " ""
+595: no false repl " a  b" lit " a  b" split " a  b"
+596: no false repl "bbab b" lit "bbab b" split "bbab b"
+597: no false repl "  ab" lit "  ab" split "  ab"
+598: no false repl "  ba" lit "  ba" split "  ba"
+599: no false repl "baba ab" lit "baba ab" split "baba ab"
+600: (3,6) true all 3-6 repl "aaa<bbb|>b " lit "aaa#b " split "aaa" "b "

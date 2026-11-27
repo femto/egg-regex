@@ -8,6 +8,9 @@
 // re.is_match(a, text)             whether it matches anywhere
 // re.find(a, text)                 ?regex.Span of the leftmost match
 // re.captures(a, text, &caps)      caps[i]: ?regex.Span of group i
+// re.next(a, text, &it)            each match in turn, it = regex.iter()
+// re.replace_all(a, &out, text, "<$1>")    text with each match replaced
+// re.split(a, text, &pieces)       the Spans between the matches
 //
 // Positions are byte offsets, so text[m.start..m.end] is the match.
 // Patterns and text are UTF-8: . and classes match a code point, and a
@@ -38,6 +41,8 @@ const Regex = struct {
     ncap: i64
     // Every match starts at the start of the text (\A or ^ first).
     anchored: bool
+    // The pattern is "", which split treats as Go's Split does.
+    empty_pattern: bool
 
     // Whether the pattern matches anywhere in s.
     fn is_match(self: Regex, a: Allocator, s: []u8) bool {
@@ -101,6 +106,163 @@ const Regex = struct {
         return true
     }
 
+    // The next match after the ones it has given, or null when there are
+    // no more: as Go's FindAll goes, each search starts at the end of the
+    // last match, or a character past it when that was empty, and an
+    // empty match right after the last match is skipped (a* on "a" is
+    // 0..1 alone).
+    fn next(self: Regex, a: Allocator, s: []u8, inout it: Iter) ?Span {
+        while (it.pos <= @len(s)) {
+            const m = self.find_at(a, s, it.pos) orelse break
+            if (step(s, &it, m)) {
+                return m
+            }
+        }
+        it.pos = @len(s) + 1
+        return null
+    }
+
+    // next, with its groups in caps as captures has them; false, caps
+    // empty, when there are no more.
+    fn next_captures(self: Regex, a: Allocator, s: []u8, inout it: Iter, inout caps: Buf(?Span)) bool {
+        while (it.pos <= @len(s)) {
+            if (!self.captures_at(a, s, it.pos, &caps)) {
+                break
+            }
+            const m = caps[0] orelse break
+            if (step(s, &it, m)) {
+                return true
+            }
+        }
+        it.pos = @len(s) + 1
+        a.resize(&caps, 0, null)
+        return false
+    }
+
+    // Every match, at the end of out.
+    fn find_all(self: Regex, a: Allocator, s: []u8, inout out: Buf(Span)) void {
+        var it = iter()
+        while (self.next(a, s, &it)) |m| {
+            a.push(&out, m)
+        }
+    }
+
+    // s at the end of out, with the first match replaced by template
+    // expanded (expand).
+    fn replace(self: Regex, a: Allocator, inout out: Buf(u8), s: []u8, template: []u8) void {
+        var caps: Buf(?Span) = .empty
+        defer a.free(caps)
+        if (self.captures(a, s, &caps)) {
+            if (caps[0]) |m| {
+                a.append_str(&out, s[0..m.start])
+                self.expand(a, &out, s, template, caps)
+                a.append_str(&out, s[m.end..])
+                return
+            }
+        }
+        a.append_str(&out, s)
+    }
+
+    // s at the end of out, with every match (as next finds them) replaced
+    // by template expanded.
+    fn replace_all(self: Regex, a: Allocator, inout out: Buf(u8), s: []u8, template: []u8) void {
+        var caps: Buf(?Span) = .empty
+        defer a.free(caps)
+        var it = iter()
+        var last = 0
+        while (self.next_captures(a, s, &it, &caps)) {
+            const m = caps[0] orelse break
+            a.append_str(&out, s[last..m.start])
+            self.expand(a, &out, s, template, caps)
+            last = m.end
+        }
+        a.append_str(&out, s[last..])
+    }
+
+    // replace_all with the text with as it is, no $ expanded.
+    fn replace_all_literal(self: Regex, a: Allocator, inout out: Buf(u8), s: []u8, with: []u8) void {
+        var it = iter()
+        var last = 0
+        while (self.next(a, s, &it)) |m| {
+            a.append_str(&out, s[last..m.start])
+            a.append_str(&out, with)
+            last = m.end
+        }
+        a.append_str(&out, s[last..])
+    }
+
+    // template at the end of out with each $ expanded from caps, the
+    // groups of a match in s, as Go's Expand does: $1 or ${1} is group 1,
+    // $name or ${name} the group of that name (a name is the longest run
+    // of letters, digits and _, so $1x is the group "1x": write ${1}x), $$
+    // is a $, and a group that took no part, or that the pattern does not
+    // have, is nothing. A $ that starts none of these is itself.
+    fn expand(self: Regex, a: Allocator, inout out: Buf(u8), s: []u8, template: []u8, caps: Buf(?Span)) void {
+        const n = @len(template)
+        var i = 0
+        while (i < n) {
+            const c = template[i]
+            if (c != '$') {
+                a.push(&out, c)
+                i = i + 1
+                continue
+            }
+            if (i + 1 < n and template[i + 1] == '$') {
+                a.push(&out, '$')
+                i = i + 2
+                continue
+            }
+            var j = i + 1
+            const brace = j < n and template[j] == '{'
+            if (brace) {
+                j = j + 1
+            }
+            const start = j
+            while (j < n and is_word(template[j])) {
+                j = j + 1
+            }
+            if (j == start or (brace and (j >= n or template[j] != '}'))) {
+                a.push(&out, '$')
+                i = i + 1
+                continue
+            }
+            const name = template[start..j]
+            i = if (brace) j + 1 else j
+            const index = group_number(name) orelse (self.group_index(name) orelse -1)
+            if (index >= 0 and index < @len(caps)) {
+                if (caps[index]) |sp| {
+                    a.append_str(&out, s[sp.start..sp.end])
+                }
+            }
+        }
+    }
+
+    // The pieces of s between the matches, at the end of out, as Go's
+    // Split(s, -1) has them: no empty piece before a match at the very
+    // start that is empty, none after the last match if it ends s, and
+    // "" for an empty s (nothing at all when the pattern is "" too).
+    fn split(self: Regex, a: Allocator, s: []u8, inout out: Buf(Span)) void {
+        if (@len(s) == 0) {
+            if (!self.empty_pattern) {
+                a.push(&out, Span{ .start = 0, .end = 0 })
+            }
+            return
+        }
+        var it = iter()
+        var begin = 0
+        var end = 0
+        while (self.next(a, s, &it)) |m| {
+            end = m.start
+            if (m.end != 0) {
+                a.push(&out, Span{ .start = begin, .end = end })
+            }
+            begin = m.end
+        }
+        if (end != @len(s)) {
+            a.push(&out, Span{ .start = begin, .end = @len(s) })
+        }
+    }
+
     // How many groups the pattern has, not counting the whole match.
     fn group_count(self: Regex) i64 {
         return self.ncap - 1
@@ -132,9 +294,51 @@ fn compile_where(a: Allocator, pattern: []u8, inout at: i64) !Regex {
         return e
     }
     const anchored = prog.anchored(t, t.root)
-    const re = Regex{ .insts = insts, .ranges = @take(&t.ranges), .names = @take(&t.names), .groups = @take(&t.groups), .ncap = t.ncap, .anchored = anchored }
+    const re = Regex{ .insts = insts, .ranges = @take(&t.ranges), .names = @take(&t.names), .groups = @take(&t.groups), .ncap = t.ncap, .anchored = anchored, .empty_pattern = @len(pattern) == 0 }
     a.free(t)
     return re
+}
+
+// Where re.next is in a text: start with iter().
+const Iter = struct {
+    // Where the next search starts.
+    pos: i64
+    // Where the last match ended, -1 before the first.
+    prev: i64
+}
+
+fn iter() Iter {
+    return Iter{ .pos = 0, .prev = -1 }
+}
+
+// Moves it past the match m, found from it.pos; false if m is an empty
+// match right after the last one, which next skips.
+fn step(s: []u8, inout it: Iter, m: Span) bool {
+    var take = true
+    if (m.end == it.pos) {
+        take = m.start != it.prev
+        it.pos = if (it.pos < @len(s)) it.pos + parse.decode(s, it.pos).len else it.pos + 1
+    } else {
+        it.pos = m.end
+    }
+    it.prev = m.end
+    return take
+}
+
+// The group a name of digits only stands for in a template, or null: as
+// in Go, not one with a leading 0 ($01), nor one of 9 digits or more.
+fn group_number(name: []u8) ?i64 {
+    if (@len(name) > 8 or (@len(name) > 1 and name[0] == '0')) {
+        return null
+    }
+    var n = 0
+    for (name) |c| {
+        if (c < '0' or c > '9') {
+            return null
+        }
+        n = n * 10 + @as(i64, c - '0')
+    }
+    return n
 }
 
 // The threads at one position, in priority order: dense[0..n] are their

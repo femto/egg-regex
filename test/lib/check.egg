@@ -1,11 +1,12 @@
-// The check that test/match.egg and test/random.egg make of each case:
-// the groups of the leftmost match, whether it matches at all, and every
-// match in turn (find_at from the end of the one before, as Go's FindAll
-// goes on), printed as test/go prints what Go's regexp finds.
+// The check that test/match.egg and test/random.egg make of each case,
+// printed as test/go prints what Go's regexp finds: the groups of the
+// leftmost match, whether it matches at all, every match (find_all, as
+// Go's FindAll), the text with each match replaced by "<$0|${1}>"
+// (replace_all) and by "#" (replace_all_literal), and the pieces split
+// leaves. test/replace.egg checks templates with r.
 uses alloc, io
 
 const regex = @import("regex")
-const parse = @import("regex/parse")
 
 fn spans(a: Allocator, inout out: Buf(u8), caps: Buf(?regex.Span)) void {
     for (caps) |c| {
@@ -21,6 +22,22 @@ fn spans(a: Allocator, inout out: Buf(u8), caps: Buf(?regex.Span)) void {
     }
 }
 
+// s in quotes, with bytes outside printable ASCII, " and \ as \xNN, so
+// that every case is one line whatever its text.
+fn quoted(a: Allocator, inout out: Buf(u8), s: []u8) void {
+    a.push(&out, '"')
+    for (s) |c| {
+        if (c >= 32 and c < 127 and c != '"' and c != '\\') {
+            a.push(&out, c)
+        } else {
+            a.append_str(&out, "\\x")
+            a.push(&out, "0123456789abcdef"[@as(i64, c >> 4)])
+            a.push(&out, "0123456789abcdef"[@as(i64, c & 15)])
+        }
+    }
+    a.push(&out, '"')
+}
+
 fn t(io: Io, a: Allocator, inout count: i64, pattern: []u8, s: []u8) void {
     count = count + 1
     const n = count
@@ -34,34 +51,64 @@ fn t(io: Io, a: Allocator, inout count: i64, pattern: []u8, s: []u8) void {
     var caps: Buf(?regex.Span) = .empty
     defer a.free(caps)
     if (!re.captures(a, s, &caps)) {
-        io.print(n, ": no ", re.is_match(a, s))
-        return
-    }
-    spans(a, &out, caps)
-    a.append_str(&out, " ")
-    a.append_str(&out, if (re.is_match(a, s)) "true" else "false")
-    a.append_str(&out, " all")
-    var pos = 0
-    var prev = -1
-    while (pos <= @len(s)) {
-        const m = re.find_at(a, s, pos) orelse break
-        var take = true
-        if (m.end == pos) {
-            // Empty: not right after another match, and on by a character.
-            if (m.start == prev) {
-                take = false
-            }
-            pos = if (pos < @len(s)) pos + parse.decode(s, pos).len else pos + 1
-        } else {
-            pos = m.end
-        }
-        prev = m.end
-        if (take) {
+        a.append_str(&out, "no ")
+        a.append_str(&out, if (re.is_match(a, s)) "true" else "false")
+    } else {
+        spans(a, &out, caps)
+        a.append_str(&out, " ")
+        a.append_str(&out, if (re.is_match(a, s)) "true" else "false")
+        a.append_str(&out, " all")
+        var all: Buf(regex.Span) = .empty
+        defer a.free(all)
+        re.find_all(a, s, &all)
+        for (all) |m| {
             a.append_str(&out, " ")
             a.append_int(&out, m.start)
             a.append_str(&out, "-")
             a.append_int(&out, m.end)
         }
     }
+    var replaced: Buf(u8) = .empty
+    defer a.free(replaced)
+    re.replace_all(a, &replaced, s, "<$0|${1}>")
+    a.append_str(&out, " repl ")
+    quoted(a, &out, replaced)
+    var literal: Buf(u8) = .empty
+    defer a.free(literal)
+    re.replace_all_literal(a, &literal, s, "#")
+    a.append_str(&out, " lit ")
+    quoted(a, &out, literal)
+    var pieces: Buf(regex.Span) = .empty
+    defer a.free(pieces)
+    re.split(a, s, &pieces)
+    a.append_str(&out, " split")
+    for (pieces) |p| {
+        a.append_str(&out, " ")
+        quoted(a, &out, s[p.start..p.end])
+    }
+    io.print(n, ": ", out)
+}
+
+// s with each match of pattern replaced by template expanded, and with
+// the first match only (replace).
+fn r(io: Io, a: Allocator, inout count: i64, pattern: []u8, s: []u8, template: []u8) void {
+    count = count + 1
+    const n = count
+    const re = regex.compile(a, pattern) catch {
+        io.print(n, ": error")
+        return
+    }
+    defer a.free(re)
+    var out: Buf(u8) = .empty
+    defer a.free(out)
+    var all: Buf(u8) = .empty
+    defer a.free(all)
+    re.replace_all(a, &all, s, template)
+    quoted(a, &out, all)
+    var first: Buf(u8) = .empty
+    defer a.free(first)
+    re.replace(a, &first, s, template)
+    a.append_str(&out, " first ")
+    quoted(a, &out, first)
     io.print(n, ": ", out)
 }

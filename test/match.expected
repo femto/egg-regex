@@ -1,152 +1,152 @@
-1: (1,4) true all 1-4
-2: no false
-3: (0,0) true all 0-0
-4: (0,0) true all 0-0 1-1 2-2 3-3
-5: (0,1) true all 0-1 1-2 2-3
-6: (4,10) true all 4-10
-7: (15,21) true all 15-21
-8: (0,1) true all 0-1
-9: (0,2) true all 0-2
-10: (2,5) true all 2-5 12-16
-11: (0,0) true all 0-0 1-1
-12: (0,0) true all 0-0 1-1
-13: (0,2)(1,1) true all 0-2 3-6 7-10
-14: (0,3) true all 0-3 4-4
-15: (0,0) true all 0-0 1-1 2-2 3-3 4-4
-16: (1,4) true all 1-4
-17: (1,2) true all 1-2 2-3 3-4
-18: (0,1) true all 0-1 2-2
-19: (0,2) true all 0-2
-20: (0,2) true all 0-2 2-4
-21: (0,5) true all 0-5
-22: (0,3) true all 0-3 3-5
-23: (0,2) true all 0-2 2-4
-24: (1,2) true all 1-2
-25: (1,3) true all 1-3
-26: (0,4)(2,4) true all 0-4 4-8
-27: (0,5) true all 0-5
-28: (0,4) true all 0-4
-29: (0,2) true all 0-2
-30: (0,2) true all 0-2
-31: (0,6) true all 0-6
-32: (0,3) true all 0-3 3-6
-33: (0,3) true all 0-3 3-6
-34: (0,6) true all 0-6
-35: (0,0)(0,0) true all 0-0 1-1
-36: (0,0)(0,0) true all 0-0 1-1
-37: (0,5)(3,4) true all 0-5
-38: (0,5)(4,5) true all 0-5
-39: (0,4)(0,3) true all 0-4
-40: (0,2) true all 0-2
-41: (0,3)(1,2) true all 0-3
-42: (0,6) true all 0-6
-43: (0,3)(0,1)(1,2)(2,3) true all 0-3
-44: (0,1)(-)(0,1) true all 0-1
-45: (0,3)(0,3)(1,3)(2,3) true all 0-3
-46: (0,1)(-) true all 0-1
-47: (0,3)(2,3) true all 0-3
-48: (0,4)(0,1)(1,4)(4,4) true all 0-4
-49: (0,4) true all 0-4
-50: (3,10)(3,7)(8,10) true all 3-10
-51: (2,4)(2,4) true all 2-4
-52: (0,0)(0,0) true all 0-0 1-1
-53: (0,0)(0,0) true all 0-0 1-1 2-2
-54: (0,3)(1,2) true all 0-3
-55: (2,5) true all 2-5
-56: (2,5) true all 2-5
-57: (2,5) true all 2-5
-58: (0,5) true all 0-5
-59: (0,2) true all 0-2
-60: (2,4) true all 2-4
-61: (0,2) true all 0-2
-62: (0,2) true all 0-2
-63: (0,1) true all 0-1
-64: (0,1) true all 0-1
-65: (1,5) true all 1-5
-66: (2,4) true all 2-4
-67: (0,5) true all 0-5 6-7
-68: (1,4) true all 1-4
-69: (2,4) true all 2-4
-70: (4,6) true all 4-6 7-9
-71: (0,3) true all 0-3
-72: (2,5) true all 2-5
-73: (2,4) true all 2-4
-74: (2,6) true all 2-6
-75: (1,4) true all 1-4
-76: (1,4) true all 1-4
-77: (3,7) true all 3-7
-78: (2,5) true all 2-5
-79: (0,4) true all 0-4
-80: (0,2) true all 0-2
-81: (0,3) true all 0-3
-82: (3,6) true all 3-6
-83: (3,6) true all 3-6
-84: (2,10) true all 2-10
-85: (2,5) true all 2-5
-86: (1,4) true all 1-4
-87: (2,4) true all 2-4
-88: no false
-89: (0,3) true all 0-3
-90: (0,3) true all 0-3
-91: (0,3) true all 0-3 3-6
-92: (0,2) true all 0-2 3-5
-93: (0,5) true all 0-5
-94: (0,3) true all 0-3
-95: no false
-96: (1,4) true all 1-4
-97: no false
-98: (0,0) true all 0-0
-99: no false
-100: (0,0) true all 0-0
-101: (2,2) true all 2-2
-102: (0,3) true all 0-3 4-7 8-13
-103: (0,3) true all 0-3 4-7 8-13
-104: (2,2) true all 2-2 5-5
-105: (0,0) true all 0-0 2-2
-106: (0,2) true all 0-2
-107: (2,4) true all 2-4
-108: no false
-109: no false
-110: (3,5) true all 3-5
-111: (0,2)(1,2) true all 0-2 3-4
-112: (0,3) true all 0-3 18-21
-113: (7,10) true all 7-10
-114: (0,0) true all 0-0 2-2 3-3 5-5
-115: (1,1) true all 1-1 4-4
-116: no false
-117: (0,0) true all 0-0
-118: (4,9) true all 4-9
-119: (1,4) true all 1-4
-120: (2,4) true all 2-4
-121: (0,2) true all 0-2
-122: (0,2) true all 0-2
-123: (3,5) true all 3-5
-124: (0,3)(0,2) true all 0-3
-125: (0,2) true all 0-2 3-4
-126: (2,5) true all 2-5
-127: (0,14) true all 0-14
-128: (4,9) true all 4-9
-129: (1,3) true all 1-3
-130: (0,3) true all 0-3
-131: (0,2) true all 0-2
-132: (0,1) true all 0-1
-133: (0,3) true all 0-3
-134: (0,2) true all 0-2
-135: (0,1) true all 0-1
-136: (1,3) true all 1-3
-137: (0,3) true all 0-3
-138: (0,2)(-)(-) true all 0-2
-139: (0,0) true all 0-0 1-5
-140: (0,3) true all 0-3
-141: (0,6)(0,6) true all 0-6
-142: (5,20)(5,8)(9,16) true all 5-20 22-34
-143: (8,15)(8,10)(11,13)(14,15) true all 8-15
-144: (0,24)(0,3)(4,15) true all 0-24
-145: (3,8)(3,8)(6,8)(-) true all 3-8 12-16
-146: (4,10)(8,9) true all 4-10
-147: (0,31)(29,30) true all 0-31
-148: no false
-149: (5,11) true all 5-11 14-21
+1: (1,4) true all 1-4 repl "x<abc|>x" lit "x#x" split "x" "x"
+2: no false repl "ab" lit "ab" split "ab"
+3: (0,0) true all 0-0 repl "<|>" lit "#" split
+4: (0,0) true all 0-0 1-1 2-2 3-3 repl "<|>a<|>b<|>c<|>" lit "#a#b#c#" split "a" "b" "c"
+5: (0,1) true all 0-1 1-2 2-3 repl "<a|><a|><a|>" lit "###" split "" "" "" ""
+6: (4,10) true all 4-10 repl "say <h\xc3\xa9llo|>" lit "say #" split "say " ""
+7: (15,21) true all 15-21 repl "\xe3\x81\x93\xe3\x82\x93\xe3\x81\xab\xe3\x81\xa1\xe3\x81\xaf<\xe6\x97\xa5\xe6\x9c\xac|>\xe8\xaa\x9e" lit "\xe3\x81\x93\xe3\x82\x93\xe3\x81\xab\xe3\x81\xa1\xe3\x81\xaf#\xe8\xaa\x9e" split "\xe3\x81\x93\xe3\x82\x93\xe3\x81\xab\xe3\x81\xa1\xe3\x81\xaf" "\xe8\xaa\x9e"
+8: (0,1) true all 0-1 repl "<a|>b" lit "#b" split "" "b"
+9: (0,2) true all 0-2 repl "<ab|>" lit "#" split "" ""
+10: (2,5) true all 2-5 12-16 repl "a <dog|> and a <bird|>" lit "a # and a #" split "a " " and a " ""
+11: (0,0) true all 0-0 1-1 repl "<|>b<|>" lit "#b#" split "b"
+12: (0,0) true all 0-0 1-1 repl "<|>a<|>" lit "#a#" split "a"
+13: (0,2)(1,1) true all 0-2 3-6 7-10 repl "<xy|> <xay|a> <xby|b> xcy" lit "# # # xcy" split "" " " " " " xcy"
+14: (0,3) true all 0-3 4-4 repl "<aaa|>b<|>" lit "#b#" split "" "b"
+15: (0,0) true all 0-0 1-1 2-2 3-3 4-4 repl "<|>a<|>a<|>a<|>b<|>" lit "#a#a#a#b#" split "a" "a" "a" "b"
+16: (1,4) true all 1-4 repl "b<aaa|>b" lit "b#b" split "b" "b"
+17: (1,2) true all 1-2 2-3 3-4 repl "b<a|><a|><a|>b" lit "b###b" split "b" "" "" "b"
+18: (0,1) true all 0-1 2-2 repl "<a|>b<|>" lit "#b#" split "" "b"
+19: (0,2) true all 0-2 repl "<ab|>" lit "#" split "" ""
+20: (0,2) true all 0-2 2-4 repl "<aa|><aa|>a" lit "##a" split "" "" "a"
+21: (0,5) true all 0-5 repl "<aaaaa|>" lit "#" split "" ""
+22: (0,3) true all 0-3 3-5 repl "<aaa|><aa|>" lit "##" split "" "" ""
+23: (0,2) true all 0-2 2-4 repl "<aa|><aa|>a" lit "##a" split "" "" "a"
+24: (1,2) true all 1-2 repl "a<b|>" lit "a#" split "a" ""
+25: (1,3) true all 1-3 repl "a<ab|>" lit "a#" split "a" ""
+26: (0,4)(2,4) true all 0-4 4-8 repl "<abab|ab><abab|ab>" lit "##" split "" "" ""
+27: (0,5) true all 0-5 repl "<a{,2}|>" lit "#" split "" ""
+28: (0,4) true all 0-4 repl "<a{x}|>" lit "#" split "" ""
+29: (0,2) true all 0-2 repl "<a{|>" lit "#" split "" ""
+30: (0,2) true all 0-2 repl "<x{|>" lit "#" split "" ""
+31: (0,6) true all 0-6 repl "<<a><b>|>" lit "#" split "" ""
+32: (0,3) true all 0-3 3-6 repl "<<a>|><<b>|>" lit "##" split "" "" ""
+33: (0,3) true all 0-3 3-6 repl "<<a>|><<b>|>" lit "##" split "" "" ""
+34: (0,6) true all 0-6 repl "<<a><b>|>" lit "#" split "" ""
+35: (0,0)(0,0) true all 0-0 1-1 repl "<|>b<|>" lit "#b#" split "b"
+36: (0,0)(0,0) true all 0-0 1-1 repl "<|>b<|>" lit "#b#" split "b"
+37: (0,5)(3,4) true all 0-5 repl "<abbac|a>" lit "#" split "" ""
+38: (0,5)(4,5) true all 0-5 repl "<aabba|a>" lit "#" split "" ""
+39: (0,4)(0,3) true all 0-4 repl "<aaab|aaa>" lit "#" split "" ""
+40: (0,2) true all 0-2 repl "<aa|>" lit "#" split "" ""
+41: (0,3)(1,2) true all 0-3 repl "<aab|a>" lit "#" split "" ""
+42: (0,6) true all 0-6 repl "<xxyyzz|>" lit "#" split "" ""
+43: (0,3)(0,1)(1,2)(2,3) true all 0-3 repl "<abc|a>" lit "#" split "" ""
+44: (0,1)(-)(0,1) true all 0-1 repl "<b|>" lit "#" split "" ""
+45: (0,3)(0,3)(1,3)(2,3) true all 0-3 repl "<abc|abc>" lit "#" split "" ""
+46: (0,1)(-) true all 0-1 repl "<b|>" lit "#" split "" ""
+47: (0,3)(2,3) true all 0-3 repl "<aaa|a>" lit "#" split "" ""
+48: (0,4)(0,1)(1,4)(4,4) true all 0-4 repl "<abcd|a>" lit "#" split "" ""
+49: (0,4) true all 0-4 repl "<abab|>x" lit "#x" split "" "x"
+50: (3,10)(3,7)(8,10) true all 3-10 repl "on <2026-11|2026>-27" lit "on #-27" split "on " "-27"
+51: (2,4)(2,4) true all 2-4 repl "  <hi|hi>" lit "  #" split "  " ""
+52: (0,0)(0,0) true all 0-0 1-1 repl "<|>x<|>" lit "#x#" split "x"
+53: (0,0)(0,0) true all 0-0 1-1 2-2 repl "<|>a<|>a<|>" lit "#a#a#" split "a" "a"
+54: (0,3)(1,2) true all 0-3 repl "<abc|b>" lit "#" split "" ""
+55: (2,5) true all 2-5 repl "xx<bca|>xx" lit "xx#xx" split "xx" "xx"
+56: (2,5) true all 2-5 repl "ab<xyz|>c" lit "ab#c" split "ab" "c"
+57: (2,5) true all 2-5 repl "AB<cde|>FG" lit "AB#FG" split "AB" "FG"
+58: (0,5) true all 0-5 repl "<abxyz|>mn" lit "#mn" split "" "mn"
+59: (0,2) true all 0-2 repl "<a]|>b" lit "#b" split "" "b"
+60: (2,4) true all 2-4 repl "a]<bc|>" lit "a]#" split "a]" ""
+61: (0,2) true all 0-2 repl "<a-|>b" lit "#b" split "" "b"
+62: (0,2) true all 0-2 repl "<-a|>b" lit "#b" split "" "b"
+63: (0,1) true all 0-1 repl "<]|>" lit "#" split "" ""
+64: (0,1) true all 0-1 repl "<-|>" lit "#" split "" ""
+65: (1,5) true all 1-5 repl "v<1.25|>x" lit "v#x" split "v" "x"
+66: (2,4) true all 2-4 repl "12<ab|>34" lit "12#34" split "12" "34"
+67: (0,5) true all 0-5 6-7 repl "<a-b_c|> <d|>" lit "# #" split "" " " ""
+68: (1,4) true all 1-4 repl "a< \x09\x0a|>b" lit "a#b" split "a" "b"
+69: (2,4) true all 2-4 repl "  <ab|> " lit "  # " split "  " " "
+70: (4,6) true all 4-6 7-9 repl "voil<\xc3\xa0|> <\xc3\xa9|>" lit "voil# #" split "voil" " " ""
+71: (0,3) true all 0-3 repl "<\xe6\x97\xa5|>" lit "#" split "" ""
+72: (2,5) true all 2-5 repl "12<abC|>3" lit "12#3" split "12" "3"
+73: (2,4) true all 2-4 repl "ab<12|>c" lit "ab#c" split "ab" "c"
+74: (2,6) true all 2-6 repl "ab<C12D|>x" lit "ab#x" split "ab" "x"
+75: (1,4) true all 1-4 repl "a<!?.|>b" lit "a#b" split "a" "b"
+76: (1,4) true all 1-4 repl "a< \x09\x0b|>b" lit "a#b" split "a" "b"
+77: (3,7) true all 3-7 repl "xyz<BEEF|>z" lit "xyz#z" split "xyz" "z"
+78: (2,5) true all 2-5 repl "  <a_1|>-" lit "  #-" split "  " "-"
+79: (0,4) true all 0-4 repl "<ab-z|>" lit "#" split "" ""
+80: (0,2) true all 0-2 repl "<[a|>" lit "#" split "" ""
+81: (0,3) true all 0-3 repl "<x[:|>" lit "#" split "" ""
+82: (3,6) true all 3-6 repl "abc<123|>def" lit "abc#def" split "abc" "def"
+83: (3,6) true all 3-6 repl "123<abc|>456" lit "123#456" split "123" "456"
+84: (2,10) true all 2-10 repl "  <foo_bar9|>!" lit "  #!" split "  " "!"
+85: (2,5) true all 2-5 repl "ab<  !|>cd" lit "ab#cd" split "ab" "cd"
+86: (1,4) true all 1-4 repl "a< \x09 |>b" lit "a#b" split "a" "b"
+87: (2,4) true all 2-4 repl "  <ab|>  " lit "  #  " split "  " "  "
+88: no false repl "\xd9\xa3" lit "\xd9\xa3" split "\xd9\xa3"
+89: (0,3) true all 0-3 repl "<abc|> a\x0ac" lit "# a\x0ac" split "" " a\x0ac"
+90: (0,3) true all 0-3 repl "<a\x0ac|>" lit "#" split "" ""
+91: (0,3) true all 0-3 3-6 repl "<\xe6\x97\xa5|><\xe6\x9c\xac|>" lit "##" split "" "" ""
+92: (0,2) true all 0-2 3-5 repl "<ab|>\x0a<cd|>" lit "#\x0a#" split "" "\x0a" ""
+93: (0,5) true all 0-5 repl "<ab\x0acd|>" lit "#" split "" ""
+94: (0,3) true all 0-3 repl "<abc|>" lit "#" split "" ""
+95: no false repl "xabc" lit "xabc" split "xabc"
+96: (1,4) true all 1-4 repl "x<abc|>" lit "x#" split "x" ""
+97: no false repl "abc\x0a" lit "abc\x0a" split "abc\x0a"
+98: (0,0) true all 0-0 repl "<|>" lit "#" split ""
+99: no false repl "x" lit "x" split "x"
+100: (0,0) true all 0-0 repl "<|>ab" lit "#ab" split "ab"
+101: (2,2) true all 2-2 repl "ab<|>" lit "ab#" split "ab"
+102: (0,3) true all 0-3 4-7 8-13 repl "<one|>\x0a<two|>\x0a<three|>" lit "#\x0a#\x0a#" split "" "\x0a" "\x0a" ""
+103: (0,3) true all 0-3 4-7 8-13 repl "<one|>\x0a<two|>\x0a<three|>" lit "#\x0a#\x0a#" split "" "\x0a" "\x0a" ""
+104: (2,2) true all 2-2 5-5 repl "a\x0a<|>\x0ab\x0a<|>" lit "a\x0a#\x0ab\x0a#" split "a\x0a" "\x0ab\x0a"
+105: (0,0) true all 0-0 2-2 repl "<|>a\x0a<|>b" lit "#a\x0a#b" split "a\x0a" "b"
+106: (0,2) true all 0-2 repl "<ab|>ab" lit "#ab" split "" "ab"
+107: (2,4) true all 2-4 repl "ab<ab|>" lit "ab#" split "ab" ""
+108: no false repl "b\x0aa" lit "b\x0aa" split "b\x0aa"
+109: no false repl "a^b" lit "a^b" split "a^b"
+110: (3,5) true all 3-5 repl "xx\x0a<xx|>" lit "xx\x0a#" split "xx\x0a" ""
+111: (0,2)(1,2) true all 0-2 3-4 repl "<ab|b>a<b|b>" lit "#a#" split "" "a" ""
+112: (0,3) true all 0-3 18-21 repl "<foo|> foobar barfoo <foo|>" lit "# foobar barfoo #" split "" " foobar barfoo " ""
+113: (7,10) true all 7-10 repl "foo bar<foo|>" lit "foo bar#" split "foo bar" ""
+114: (0,0) true all 0-0 2-2 3-3 5-5 repl "<|>ab<|> <|>cd<|>" lit "#ab# #cd#" split "ab" " " "cd"
+115: (1,1) true all 1-1 4-4 repl "a<|>b c<|>d" lit "a#b c#d" split "a" "b c" "d"
+116: no false repl "" lit "" split ""
+117: (0,0) true all 0-0 repl "<|>" lit "#" split ""
+118: (4,9) true all 4-9 repl "Say <HeLLo|>" lit "Say #" split "Say " ""
+119: (1,4) true all 1-4 repl "x<AbC|>d" lit "x#d" split "x" "d"
+120: (2,4) true all 2-4 repl "Aa<Bb|>" lit "Aa#" split "Aa" ""
+121: (0,2) true all 0-2 repl "<aB|> AB" lit "# AB" split "" " AB"
+122: (0,2) true all 0-2 repl "<Ab|> AB" lit "# AB" split "" " AB"
+123: (3,5) true all 3-5 repl "AB <Ab|>" lit "AB #" split "AB " ""
+124: (0,3)(0,2) true all 0-3 repl "<aBc|aB> aBC" lit "# aBC" split "" " aBC"
+125: (0,2) true all 0-2 3-4 repl "<xY|> <Z|>" lit "# #" split "" " " ""
+126: (2,5) true all 2-5 repl "x\x0a<a\x0ab|>\x0ay" lit "x\x0a#\x0ay" split "x\x0a" "\x0ay"
+127: (0,14) true all 0-14 repl "<.*+?()[]{}|^$\x5c|>" lit "#" split "" ""
+128: (4,9) true all 4-9 repl "ABC <AB\xe6\x97\xa5|>" lit "ABC #" split "ABC " ""
+129: (1,3) true all 1-3 repl "a<\x09\x0a|>b" lit "a#b" split "a" "b"
+130: (0,3) true all 0-3 repl "<a-b|>" lit "#" split "" ""
+131: (0,2) true all 0-2 repl "<# |>" lit "#" split "" ""
+132: (0,1) true all 0-1 repl "<\xff|>" lit "#" split "" ""
+133: (0,3) true all 0-3 repl "<a\xffb|>" lit "#" split "" ""
+134: (0,2) true all 0-2 repl "<\xff\xfe|>" lit "#" split "" ""
+135: (0,1) true all 0-1 repl "<\xff|>" lit "#" split "" ""
+136: (1,3) true all 1-3 repl "\xff<aa|>\xff" lit "\xff#\xff" split "\xff" "\xff"
+137: (0,3) true all 0-3 repl "<abc|>" lit "#" split "" ""
+138: (0,2)(-)(-) true all 0-2 repl "<ab|>d" lit "#d" split "" "d"
+139: (0,0) true all 0-0 1-5 repl "<|>x<aabb|>" lit "#x#" split "x" ""
+140: (0,3) true all 0-3 repl "<foo|>bar" lit "#bar" split "" "bar"
+141: (0,6)(0,6) true all 0-6 repl "<foobar|foobar>" lit "#" split "" ""
+142: (5,20)(5,8)(9,16) true all 5-20 22-34 repl "mail <bob@example.com|bob>, <eve@corp.com|eve>" lit "mail #, #" split "mail " ", " ""
+143: (8,15)(8,10)(11,13)(14,15) true all 8-15 repl "version <10.24.3|10>-beta" lit "version #-beta" split "version " "-beta"
+144: (0,24)(0,3)(4,15) true all 0-24 repl "<GET /index.html HTTP/1.1|GET>" lit "#" split "" ""
+145: (3,8)(3,8)(6,8)(-) true all 3-8 12-16 repl "an <Error|Error>, a <WARN|WARN>, no warns" lit "an #, a #, no warns" split "an " ", a " ", no warns"
+146: (4,10)(8,9) true all 4-10 repl "say <\x22a\x5c\x22b\x22|b> ok" lit "say # ok" split "say " " ok"
+147: (0,31)(29,30) true all 0-31 repl "<aaaaaaaaaaaaaaaaaaaaaaaaaaaaaab|a>" lit "#" split "" ""
+148: no false repl "xxxxxxxxxxxxxxxxxxxxxxxxx" lit "xxxxxxxxxxxxxxxxxxxxxxxxx" split "xxxxxxxxxxxxxxxxxxxxxxxxx"
+149: (5,11) true all 5-11 14-21 repl "ab12 <abcd12|>3 a<bcdef45|>" lit "ab12 #3 a#" split "ab12 " "3 a" ""
 150: error
 151: error
 152: error
@@ -164,7 +164,7 @@
 164: error
 165: error
 166: error
-167: (0,0) true all 0-0
+167: (0,0) true all 0-0 repl "<|>" lit "#" split ""
 168: error
 169: error
 170: error

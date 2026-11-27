@@ -1,0 +1,47 @@
+// Templates: each case is the text with every match replaced, and with
+// the first only (test/lib/check.egg's r). test/replace.expected is what
+// Go's ReplaceAllString and Expand give (test/go).
+uses alloc, io
+
+const check = @import("lib/check.egg")
+
+fn main(io: Io, a: Allocator) void {
+    var n = 0
+    // Groups by number and by name, $$, and what is not a group.
+    check.r(io, a, &n, "(\\w+)@(\\w+)", "bob@example eve@corp", "$2 at $1")
+    check.r(io, a, &n, "(\\w+)@(\\w+)", "bob@example", "${2}_x $2_x")
+    check.r(io, a, &n, "(?P<user>\\w+)@(?P<host>\\w+)", "bob@example", "$host/$user ${host}!")
+    check.r(io, a, &n, "a(b)?", "ab a", "[$1]")
+    check.r(io, a, &n, "a", "aaa", "$$")
+    check.r(io, a, &n, "a", "aa", "$")
+    check.r(io, a, &n, "a", "aa", "x$")
+    check.r(io, a, &n, "a", "aa", "${")
+    check.r(io, a, &n, "a", "aa", "${0")
+    check.r(io, a, &n, "a", "aa", "${}")
+    check.r(io, a, &n, "a", "aa", "$!")
+    check.r(io, a, &n, "a", "aa", "$9")
+    check.r(io, a, &n, "a", "aa", "$nope")
+    check.r(io, a, &n, "(a)", "aa", "$01 $1 ${01}")
+    check.r(io, a, &n, "(a)", "aa", "$123456789 $12345678")
+    check.r(io, a, &n, "(a)", "aa", "$1x ${1}x")
+    check.r(io, a, &n, "(?P<x1>a)", "aa", "$x1 ${x1}")
+    check.r(io, a, &n, "a", "aa", "$0$0")
+    // Empty matches: between characters, not right after a match.
+    check.r(io, a, &n, "", "abc", "-")
+    check.r(io, a, &n, "x*", "abc", "-")
+    check.r(io, a, &n, "a*", "baaac", "-")
+    check.r(io, a, &n, "a*", "", "-")
+    check.r(io, a, &n, "b*", "abc", "-")
+    check.r(io, a, &n, "\\b", "hi there", "|")
+    check.r(io, a, &n, "$", "ab", "!")
+    check.r(io, a, &n, "(?m)^", "a\nb\n", "> ")
+    check.r(io, a, &n, "(?m)$", "a\nb\n", ";")
+    check.r(io, a, &n, "", "日本", "-")
+    check.r(io, a, &n, "", "\xffa", "-")
+    // No match: the text as it was.
+    check.r(io, a, &n, "z", "abc", "-")
+    // Larger.
+    check.r(io, a, &n, "(\\d{4})-(\\d{2})-(\\d{2})", "from 2026-11-27 to 2027-01-03", "$3/$2/$1")
+    check.r(io, a, &n, "\\s+", "  a   b \t c  ", " ")
+    check.r(io, a, &n, "(?i)egg", "Egg eggs EGG", "<$0>")
+}

@@ -50,19 +50,51 @@ only read once compiled, so threads may share one. Matching takes an
 | `find_at(a, s, start)` | the leftmost match starting at start or later; `^`, `\b` and the like still see the text before start |
 | `captures(a, s, &caps)` | false if no match; else `caps`, a `Buf(?regex.Span)`, holds group 0 (the whole match) and each group, null for one that took no part |
 | `captures_at(a, s, start, &caps)` | the same from start |
+| `next(a, s, &it)` | each match in turn, from `var it = regex.iter()`, then null |
+| `next_captures(a, s, &it, &caps)` | the same with its groups in caps, then false |
+| `find_all(a, s, &out)` | every match, pushed onto `out: Buf(regex.Span)` |
+| `replace_all(a, &out, s, template)` | s at the end of `out: Buf(u8)` with every match replaced by template, its `$` expanded |
+| `replace(a, &out, s, template)` | the same for the first match only |
+| `replace_all_literal(a, &out, s, with)` | every match replaced by with as it is |
+| `expand(a, &out, s, template, caps)` | template with its `$` expanded from the groups in caps |
+| `split(a, s, &out)` | the pieces of s between the matches, as `Span`s pushed onto out |
 | `group_count()` | how many groups the pattern has, not counting group 0 |
 | `group_index(name)` | `?i64`: the number of the group `(?P<name>...)` or `(?<name>...)` |
 
 Positions are byte offsets, so `s[m.start..m.end]` is the match. Of the
 matches at the leftmost position, the one the pattern prefers wins, as in
-Perl, RE2, Go and Rust: `a|ab` finds `a` in `ab`, `a*?` the shortest. For
-every match in turn, call `find_at` from the end of the last one, or one
-character past it when it was empty, and stop when there is no match or
-the start has gone past the end of the text (after an empty match at the
-end); `find_at` and `captures_at` find nothing from a start outside
-`0..@len(s)`. To find what Go's `FindAll` finds, also skip an empty match
-that starts where the last match ended: `a*` on `a` is then `0..1` alone,
-not `0..1` and `1..1`. test/lib/check.egg does just that.
+Perl, RE2, Go and Rust: `a|ab` finds `a` in `ab`, `a*?` the shortest.
+`find_at` and `captures_at` find nothing from a start outside
+`0..@len(s)`.
+
+```egg
+var it = regex.iter()
+while (re.next(a, s, &it)) |m| {
+    io.print(s[m.start..m.end])
+}
+```
+
+`next` goes through the matches as Go's `FindAll` does: each search
+starts at the end of the last match, or a character past it when that was
+empty, and an empty match right after the last match is skipped, so `a*`
+on `a` is `0..1` alone, not `0..1` and `1..1`. `find_all`, `replace_all`,
+`replace_all_literal` and `split` go the same way, and give what Go's
+`FindAllString`, `ReplaceAllString`, `ReplaceAllLiteralString` and
+`Split(s, -1)` give.
+
+A template is Go's: `$1` or `${1}` is group 1, `$name` or `${name}` the
+named group, `$$` a `$`. A name is the longest run of letters, digits and
+`_`, so `$1x` is the group called `1x`; write `${1}x`. A group that took no
+part, or that the pattern does not have, is nothing, and a `$` that starts
+none of these is itself.
+
+```egg
+const date = try regex.compile(a, "(\\d{4})-(\\d{2})-(\\d{2})")
+defer a.free(date)
+var out: Buf(u8) = .empty
+defer a.free(out)
+date.replace_all(a, &out, "on 2026-11-27", "$3/$2/$1")   // on 27/11/2026
+```
 
 ## Syntax
 
@@ -104,7 +136,9 @@ clutch test
 ```
 
 `test/match.egg` and `test/random.egg` (200 random patterns, made by
-`test/gen`) print, for each case, the groups of the leftmost match and
-every match; their expected output is what Go's `regexp` says of the same
-cases (`go run test/go/main.go`), which CI checks again. `test/errors.egg`
+`test/gen`) print, for each case, the groups of the leftmost match, every
+match, the text with the matches replaced, and its pieces split;
+`test/replace.egg` has templates. Their expected output is what Go's
+`regexp` says of the same cases (`go run test/go/main.go`), which CI
+checks again. `test/errors.egg`
 has what is not a pattern, and `test/api.egg` the rest of the API.
