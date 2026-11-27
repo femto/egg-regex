@@ -37,11 +37,18 @@ fn count(io: Io, a: Allocator, clock: Clock, name: str, pattern: []u8, s: []u8) 
     const t0 = clock.monotonic()
     var n = 0
     var it = regex.iter()
+    defer a.free(it)
     while (re.next(a, s, &it)) |m| {
         n = n + 1 + m.len() * 0
     }
     const us = (clock.monotonic() - t0) / 1000
-    io.print(name, ": ", n, " matches in ", us / 1000, ".", (us % 1000) / 100, " ms")
+    // The same with find_all, which keeps one cache for every match.
+    var all: Buf(regex.Span) = .empty
+    defer a.free(all)
+    const t1 = clock.monotonic()
+    re.find_all(a, s, &all)
+    const us1 = (clock.monotonic() - t1) / 1000
+    io.print(name, ": ", n, " matches in ", us / 1000, ".", (us % 1000) / 100, " ms, find_all ", us1 / 1000, ".", (us1 % 1000) / 100, " ms")
 }
 
 fn main(io: Io, a: Allocator, clock: Clock) !void {

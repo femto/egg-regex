@@ -27,8 +27,19 @@ fn compile(a: Allocator, t: parse.Ast) !Buf(Inst) {
     var insts: Buf(Inst) = .empty
     errdefer a.free(insts)
     try push(a, &insts, .save, 0, 0)
-    try emit(a, t, t.root, &insts)
+    try emit(a, t, t.root, false, &insts)
     try push(a, &insts, .save, 1, 0)
+    try push(a, &insts, .match, 0, 0)
+    return insts
+}
+
+// The program of t read backwards, for the DFA that finds where a match
+// starts from where it ends: concatenations reversed, no groups. The
+// assertions stay what they are, tests of the text around a position.
+fn compile_reverse(a: Allocator, t: parse.Ast) !Buf(Inst) {
+    var insts: Buf(Inst) = .empty
+    errdefer a.free(insts)
+    try emit(a, t, t.root, true, &insts)
     try push(a, &insts, .match, 0, 0)
     return insts
 }
@@ -40,7 +51,7 @@ fn push(a: Allocator, inout insts: Buf(Inst), op: Op, x: i64, y: i64) !void {
     a.push(&insts, Inst{ .op = op, .x = x, .y = y })
 }
 
-fn emit(a: Allocator, t: parse.Ast, n: i64, inout insts: Buf(Inst)) !void {
+fn emit(a: Allocator, t: parse.Ast, n: i64, rev: bool, inout insts: Buf(Inst)) !void {
     const node = t.nodes[n]
     switch (node.kind) {
         .empty => {}
@@ -77,7 +88,8 @@ fn emit(a: Allocator, t: parse.Ast, n: i64, inout insts: Buf(Inst)) !void {
         .cat => {
             var i = 0
             while (i < node.b) {
-                try emit(a, t, t.kids[node.a + i], &insts)
+                const kid = if (rev) node.b - 1 - i else i
+                try emit(a, t, t.kids[node.a + kid], rev, &insts)
                 i = i + 1
             }
         }
@@ -89,31 +101,35 @@ fn emit(a: Allocator, t: parse.Ast, n: i64, inout insts: Buf(Inst)) !void {
             while (i < node.b - 1) {
                 const at = @len(insts)
                 try push(a, &insts, .split, at + 1, 0)
-                try emit(a, t, t.kids[node.a + i], &insts)
+                try emit(a, t, t.kids[node.a + i], rev, &insts)
                 a.push(&jumps, @len(insts))
                 try push(a, &insts, .jmp, 0, 0)
                 insts[at].y = @len(insts)
                 i = i + 1
             }
-            try emit(a, t, t.kids[node.a + node.b - 1], &insts)
+            try emit(a, t, t.kids[node.a + node.b - 1], rev, &insts)
             for (jumps) |j| {
                 insts[j].x = @len(insts)
             }
         }
         .group => {
-            try push(a, &insts, .save, 2 * node.b, 0)
-            try emit(a, t, node.a, &insts)
-            try push(a, &insts, .save, 2 * node.b + 1, 0)
+            if (rev) {
+                try emit(a, t, node.a, rev, &insts)
+            } else {
+                try push(a, &insts, .save, 2 * node.b, 0)
+                try emit(a, t, node.a, rev, &insts)
+                try push(a, &insts, .save, 2 * node.b + 1, 0)
+            }
         }
         .rep => {
-            try repeat(a, t, node, &insts)
+            try repeat(a, t, node, rev, &insts)
         }
     }
 }
 
 // x{min,max}: min copies of x, then either a loop (no max) or max - min
 // optional copies, each a split that prefers going in when greedy.
-fn repeat(a: Allocator, t: parse.Ast, node: parse.Node, inout insts: Buf(Inst)) !void {
+fn repeat(a: Allocator, t: parse.Ast, node: parse.Node, rev: bool, inout insts: Buf(Inst)) !void {
     const x = node.a
     const min = node.b
     const max = node.c
@@ -124,7 +140,7 @@ fn repeat(a: Allocator, t: parse.Ast, node: parse.Node, inout insts: Buf(Inst)) 
         const skip = @len(insts)
         try push(a, &insts, .split, 0, 0)
         const loop = @len(insts)
-        try emit(a, t, x, &insts)
+        try emit(a, t, x, rev, &insts)
         const next = @len(insts) + 1
         if (node.greedy) {
             try push(a, &insts, .split, loop, next)
@@ -139,11 +155,11 @@ fn repeat(a: Allocator, t: parse.Ast, node: parse.Node, inout insts: Buf(Inst)) 
         // x{min,}: min - 1 copies, then x+ as L: x; split L, next.
         var i = 0
         while (i < min - 1) {
-            try emit(a, t, x, &insts)
+            try emit(a, t, x, rev, &insts)
             i = i + 1
         }
         const loop = @len(insts)
-        try emit(a, t, x, &insts)
+        try emit(a, t, x, rev, &insts)
         const next = @len(insts) + 1
         if (node.greedy) {
             try push(a, &insts, .split, loop, next)
@@ -154,14 +170,14 @@ fn repeat(a: Allocator, t: parse.Ast, node: parse.Node, inout insts: Buf(Inst)) 
     }
     var i = 0
     while (i < min) {
-        try emit(a, t, x, &insts)
+        try emit(a, t, x, rev, &insts)
         i = i + 1
     }
     if (max < 0) {
         // x*: L: split body, end; body: x; jmp L; end:
         const loop = @len(insts)
         try push(a, &insts, .split, 0, 0)
-        try emit(a, t, x, &insts)
+        try emit(a, t, x, rev, &insts)
         try push(a, &insts, .jmp, loop, 0)
         const end = @len(insts)
         branch(&insts, loop, loop + 1, end, node.greedy)
@@ -174,7 +190,7 @@ fn repeat(a: Allocator, t: parse.Ast, node: parse.Node, inout insts: Buf(Inst)) 
     while (k < max) {
         a.push(&splits, @len(insts))
         try push(a, &insts, .split, 0, 0)
-        try emit(a, t, x, &insts)
+        try emit(a, t, x, rev, &insts)
         k = k + 1
     }
     const end = @len(insts)
@@ -332,4 +348,49 @@ fn lead(cp: i64) i64 {
         return 224 | (cp >> 12)
     }
     return 240 | (cp >> 18)
+}
+
+// The code points cut into classes that every instruction of insts treats
+// alike, for the DFA, which steps on classes: starts gets where each
+// class begins, sorted, from 0. \n and the ASCII word characters are
+// classes of their own kind, for ^, $ and \b.
+fn classes(a: Allocator, insts: Buf(Inst), ranges: Buf(parse.Range), inout starts: Buf(i64)) void {
+    var cuts: Buf(i64) = .empty
+    defer a.free(cuts)
+    for ([_]i64{ 0, 10, 11, '0', '9' + 1, 'A', 'Z' + 1, '_', '_' + 1, 'a', 'z' + 1, 128 }) |c| {
+        a.push(&cuts, c)
+    }
+    for (insts) |ins| {
+        if (ins.op == .char) {
+            a.push(&cuts, ins.x)
+            a.push(&cuts, ins.x + 1)
+        } else if (ins.op == .cls) {
+            var i = ins.x
+            while (i < ins.x + ins.y) {
+                a.push(&cuts, ranges[i].lo)
+                a.push(&cuts, ranges[i].hi + 1)
+                i = i + 1
+            }
+        }
+    }
+    sort_ints(&cuts)
+    for (cuts) |c| {
+        const n = @len(starts)
+        if (c <= parse.MAX_CP and (n == 0 or starts[n - 1] != c)) {
+            a.push(&starts, c)
+        }
+    }
+}
+
+// Insertion sort, for the few cuts a program has.
+fn sort_ints(inout xs: Buf(i64)) void {
+    var i = 1
+    while (i < @len(xs)) {
+        var j = i
+        while (j > 0 and xs[j - 1] > xs[j]) {
+            @swap(&xs, j - 1, j)
+            j = j - 1
+        }
+        i = i + 1
+    }
 }

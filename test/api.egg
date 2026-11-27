@@ -55,6 +55,7 @@ fn main(io: Io, a: Allocator) !void {
     defer a.free(kv)
     const pairs = "a=1, b=, c=33"
     var it = regex.iter()
+    defer a.free(it)
     while (kv.next_captures(a, pairs, &it, &caps)) {
         const k = caps[1] orelse continue
         const v = caps[2] orelse continue
@@ -63,12 +64,13 @@ fn main(io: Io, a: Allocator) !void {
     io.print(kv.next_captures(a, pairs, &it, &caps), " ", @len(caps))
     show(io, kv.next(a, pairs, &it))
     var words = regex.iter()
+    defer a.free(words)
     while (kv.next(a, "x=y z=w", &words)) |m| {
         show(io, m)
     }
-    // A long text: the API runs pike on it (past MAX_BACKTRACK), and
-    // backtrack, called itself, grows its stack many times over; both
-    // find the same groups.
+    // A long text: the API runs the DFA on it (past MAX_BACKTRACK), and
+    // the NFA on the match it finds; backtrack, called itself, grows its
+    // stack many times over; all find the same groups.
     var long: Buf(u8) = .empty
     defer a.free(long)
     var w = 0
@@ -86,10 +88,10 @@ fn main(io: Io, a: Allocator) !void {
     }
     var slots: Buf(i64) = .empty
     defer a.free(slots)
-    if (regex.backtrack(tail, a, long, 0, 6, &slots)) {
+    if (regex.backtrack(tail, a, long, 0, @len(long), 6, &slots)) {
         io.print(slots[0], "-", slots[1], " ", slots[2], "-", slots[3], " ", slots[4], "-", slots[5])
     }
-    io.print(regex.pike(tail, a, long, 0, 0, true, &slots), " ", regex.backtrack(tail, a, long, 0, 0, &slots))
+    io.print(regex.pike(tail, a, long, 0, @len(long), 0, true, &slots), " ", regex.backtrack(tail, a, long, 0, @len(long), 0, &slots))
     const none = try regex.compile(a, "a")
     defer a.free(none)
     io.print(none.group_count(), " ", none.is_match(a, "bab"), " ", none.is_match(a, "bbb"))

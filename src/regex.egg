@@ -9,6 +9,7 @@
 // re.find(a, text)                 ?regex.Span of the leftmost match
 // re.captures(a, text, &caps)      caps[i]: ?regex.Span of group i
 // re.next(a, text, &it)            each match in turn, it = regex.iter()
+//                                  (a.free(it) when done)
 // re.replace_all(a, &out, text, "<$1>")    text with each match replaced
 // re.split(a, text, &pieces)       the Spans between the matches
 //
@@ -21,6 +22,7 @@ uses alloc
 
 const parse = @import("parse.egg")
 const prog = @import("prog.egg")
+const dfa = @import("dfa.egg")
 
 // A match, or a group in one: text[start..end].
 const Span = struct {
@@ -48,12 +50,19 @@ const Regex = struct {
     // may be empty or start with anything.
     skip: bool
     first: [256]bool
+    // For the DFA (dfa.egg): the program backwards, and the classes of
+    // code points it steps on: where each starts, its kind for ^, $ and
+    // \b, and the class of each ASCII code point.
+    rev: Buf(prog.Inst)
+    class_starts: Buf(i64)
+    class_kinds: Buf(i64)
+    ascii_class: [128]i64
 
     // Whether the pattern matches anywhere in s.
     fn is_match(self: Regex, a: Allocator, s: []u8) bool {
-        var slots: Buf(i64) = .empty
-        defer a.free(slots)
-        return run(self, a, s, 0, 0, true, &slots)
+        var c = dfa.new_cache()
+        defer a.free(c)
+        return run(self, a, s, 0, 0, true, &c)
     }
 
     // The leftmost match in s, preferring what the pattern prefers (as
@@ -68,15 +77,9 @@ const Regex = struct {
     // in turn, search on from its end, or one character past it when it
     // is empty, and stop once the start is past the end of s.
     fn find_at(self: Regex, a: Allocator, s: []u8, start: i64) ?Span {
-        if (start < 0 or start > @len(s)) {
-            return null
-        }
-        var slots: Buf(i64) = .empty
-        defer a.free(slots)
-        if (!run(self, a, s, start, 2, false, &slots)) {
-            return null
-        }
-        return Span{ .start = slots[0], .end = slots[1] }
+        var c = dfa.new_cache()
+        defer a.free(c)
+        return find_in(self, a, s, start, &c)
     }
 
     // The leftmost match and its groups: caps gets one ?Span per group,
@@ -88,25 +91,9 @@ const Regex = struct {
 
     // captures from start, which, as for find_at, must be in 0..@len(s).
     fn captures_at(self: Regex, a: Allocator, s: []u8, start: i64, inout caps: Buf(?Span)) bool {
-        var slots: Buf(i64) = .empty
-        defer a.free(slots)
-        if (start < 0 or start > @len(s) or !run(self, a, s, start, 2 * self.ncap, false, &slots)) {
-            clear(a, &caps)
-            return false
-        }
-        // a.resize reallocates whenever the length changes, so caps keeps
-        // its length from one call to the next and is written in place.
-        if (@len(caps) != self.ncap) {
-            a.resize(&caps, self.ncap, null)
-        }
-        var i = 0
-        while (i < self.ncap) {
-            const lo = slots[2 * i]
-            const hi = slots[2 * i + 1]
-            caps[i] = if (lo >= 0 and hi >= 0) Span{ .start = lo, .end = hi } else null
-            i = i + 1
-        }
-        return true
+        var c = dfa.new_cache()
+        defer a.free(c)
+        return captures_in(self, a, s, start, &c, &caps)
     }
 
     // The next match after the ones it has given, or null when there are
@@ -116,7 +103,7 @@ const Regex = struct {
     // 0..1 alone).
     fn next(self: Regex, a: Allocator, s: []u8, inout it: Iter) ?Span {
         while (it.pos <= @len(s)) {
-            const m = self.find_at(a, s, it.pos) orelse break
+            const m = find_in(self, a, s, it.pos, &it.cache) orelse break
             if (step(s, &it, m)) {
                 return m
             }
@@ -129,7 +116,7 @@ const Regex = struct {
     // empty, when there are no more.
     fn next_captures(self: Regex, a: Allocator, s: []u8, inout it: Iter, inout caps: Buf(?Span)) bool {
         while (it.pos <= @len(s)) {
-            if (!self.captures_at(a, s, it.pos, &caps)) {
+            if (!captures_in(self, a, s, it.pos, &it.cache, &caps)) {
                 break
             }
             const m = caps[0] orelse break
@@ -145,6 +132,7 @@ const Regex = struct {
     // Every match, at the end of out.
     fn find_all(self: Regex, a: Allocator, s: []u8, inout out: Buf(Span)) void {
         var it = iter()
+        defer a.free(it)
         while (self.next(a, s, &it)) |m| {
             a.push(&out, m)
         }
@@ -172,6 +160,7 @@ const Regex = struct {
         var caps: Buf(?Span) = .empty
         defer a.free(caps)
         var it = iter()
+        defer a.free(it)
         var last = 0
         while (self.next_captures(a, s, &it, &caps)) {
             const m = caps[0] orelse break
@@ -185,6 +174,7 @@ const Regex = struct {
     // replace_all with the text with as it is, no $ expanded.
     fn replace_all_literal(self: Regex, a: Allocator, inout out: Buf(u8), s: []u8, with: []u8) void {
         var it = iter()
+        defer a.free(it)
         var last = 0
         while (self.next(a, s, &it)) |m| {
             a.append_str(&out, s[last..m.start])
@@ -252,6 +242,7 @@ const Regex = struct {
             return
         }
         var it = iter()
+        defer a.free(it)
         var begin = 0
         var end = 0
         while (self.next(a, s, &it)) |m| {
@@ -299,21 +290,74 @@ fn compile_where(a: Allocator, pattern: []u8, inout at: i64) !Regex {
     const anchored = prog.anchored(t, t.root)
     var first: [256]bool = @splat(false)
     const skip = prog.firsts(a, insts, t.ranges, &first)
-    const re = Regex{ .insts = insts, .ranges = @take(&t.ranges), .names = @take(&t.names), .groups = @take(&t.groups), .ncap = t.ncap, .anchored = anchored, .empty_pattern = @len(pattern) == 0, .skip = skip, .first = first }
+    const rev = prog.compile_reverse(a, t) catch |e| {
+        a.free(insts)
+        a.free(t)
+        return e
+    }
+    var starts: Buf(i64) = .empty
+    prog.classes(a, insts, t.ranges, &starts)
+    var kinds: Buf(i64) = .empty
+    for (starts) |cp| {
+        a.push(&kinds, dfa.kind(cp))
+    }
+    var ascii: [128]i64 = @splat(0)
+    var c = 0
+    var cls = 0
+    while (c < 128) {
+        while (cls + 1 < @len(starts) and starts[cls + 1] <= c) {
+            cls = cls + 1
+        }
+        ascii[c] = cls
+        c = c + 1
+    }
+    const re = Regex{ .insts = insts, .ranges = @take(&t.ranges), .names = @take(&t.names), .groups = @take(&t.groups), .ncap = t.ncap, .anchored = anchored, .empty_pattern = @len(pattern) == 0, .skip = skip, .first = first, .rev = rev, .class_starts = starts, .class_kinds = kinds, .ascii_class = ascii }
     a.free(t)
     return re
 }
 
-// Where re.next is in a text: start with iter().
+// find_at, with c for the search's memory.
+fn find_in(re: Regex, a: Allocator, s: []u8, start: i64, inout c: dfa.Cache) ?Span {
+    if (start < 0 or start > @len(s) or !run(re, a, s, start, 2, false, &c)) {
+        return null
+    }
+    return Span{ .start = c.m[0], .end = c.m[1] }
+}
+
+// captures_at, with c for the search's memory.
+fn captures_in(re: Regex, a: Allocator, s: []u8, start: i64, inout c: dfa.Cache, inout caps: Buf(?Span)) bool {
+    if (start < 0 or start > @len(s) or !run(re, a, s, start, 2 * re.ncap, false, &c)) {
+        clear(a, &caps)
+        return false
+    }
+    // a.resize reallocates whenever the length changes, so caps keeps its
+    // length from one call to the next and is written in place.
+    if (@len(caps) != re.ncap) {
+        a.resize(&caps, re.ncap, null)
+    }
+    var i = 0
+    while (i < re.ncap) {
+        const lo = c.m[2 * i]
+        const hi = c.m[2 * i + 1]
+        caps[i] = if (lo >= 0 and hi >= 0) Span{ .start = lo, .end = hi } else null
+        i = i + 1
+    }
+    return true
+}
+
+// Where re.next is in a text: start with iter(), and free it when done
+// (a.free(it)). It keeps the DFA the search builds from one match to the
+// next, which on a long text with many matches is most of the time.
 const Iter = struct {
     // Where the next search starts.
     pos: i64
     // Where the last match ended, -1 before the first.
     prev: i64
+    cache: dfa.Cache
 }
 
 fn iter() Iter {
-    return Iter{ .pos = 0, .prev = -1 }
+    return Iter{ .pos = 0, .prev = -1, .cache = dfa.new_cache() }
 }
 
 // caps emptied, reallocating only if it was not empty already.
@@ -366,15 +410,48 @@ fn group_number(name: []u8) ?i64 {
 const MAX_BACKTRACK = 262144
 
 // Runs the program on s from start: k slots (2 per group) are wanted,
-// and on a match m[0..k] holds them, -1 for a group that took no part.
-// With earliest, any match will do. m may hold anything when it comes,
-// from an earlier call. Short texts go to backtrack, longer ones to
-// pike; both find the same match.
-fn run(re: Regex, a: Allocator, s: []u8, start: i64, k: i64, earliest: bool, inout m: Buf(i64)) bool {
+// and on a match c.m[0..k] holds them, -1 for a group that took no part.
+// With earliest, any match will do. Short texts go to backtrack, longer
+// ones to the DFA (run_dfa); all find the same match.
+fn run(re: Regex, a: Allocator, s: []u8, start: i64, k: i64, earliest: bool, inout c: dfa.Cache) bool {
     if (@len(re.insts) * (@len(s) - start + 1) <= MAX_BACKTRACK) {
-        return backtrack(re, a, s, start, k, &m)
+        return backtrack(re, a, s, start, @len(s), k, &c.m)
     }
-    return pike(re, a, s, start, k, earliest, &m)
+    return run_dfa(re, a, s, start, k, earliest, &c)
+}
+
+// run with the lazy DFA: forward to where the match ends, back to where
+// it starts, and only then, if groups are wanted, an NFA on that span.
+// If a DFA runs out of room, pike does it all.
+fn run_dfa(re: Regex, a: Allocator, s: []u8, start: i64, k: i64, earliest: bool, inout c: dfa.Cache) bool {
+    const end = dfa.find_end(re, a, &c.work, &c.fwd, s, start, earliest or k == 0)
+    if (end == dfa.FULL) {
+        return pike(re, a, s, start, @len(s), k, earliest, &c.m)
+    }
+    if (end < 0) {
+        return false
+    }
+    if (k == 0) {
+        return true
+    }
+    const begin = dfa.find_start(re, a, &c.work, &c.rev, s, start, end)
+    if (begin < 0) {
+        return pike(re, a, s, start, @len(s), k, earliest, &c.m)
+    }
+    if (k == 2) {
+        if (@len(c.m) < 2) {
+            a.resize(&c.m, 2, 0)
+        }
+        c.m[0] = begin
+        c.m[1] = end
+        return true
+    }
+    // The match is begin..end: its groups from the NFA there alone, which
+    // reads no further than end (assertions still see past it).
+    if (@len(re.insts) * (end - begin + 1) <= MAX_BACKTRACK) {
+        return backtrack(re, a, s, begin, end, k, &c.m)
+    }
+    return pike(re, a, s, begin, end, k, false, &c.m)
 }
 
 // The match a depth-first search finds, trying a split's first branch
@@ -382,10 +459,11 @@ fn run(re: Regex, a: Allocator, s: []u8, start: i64, k: i64, earliest: bool, ino
 // Each state (instruction, position) is tried at most once, from every
 // start alike (one that failed fails again), so the time is still
 // O(len(s) * len(insts)), but with no list of threads to keep: for short
-// texts, where the set of states is small, this is the faster.
-fn backtrack(re: Regex, a: Allocator, s: []u8, start: i64, k: i64, inout m: Buf(i64)) bool {
+// texts, where the set of states is small, this is the faster. It reads
+// no further than end, as pike.
+fn backtrack(re: Regex, a: Allocator, s: []u8, start: i64, end: i64, k: i64, inout m: Buf(i64)) bool {
     const n = @len(re.insts)
-    const len = @len(s) - start + 1
+    const len = end - start + 1
     // m: k slots, the visited bits ((pos - start) * n + pc), then a stack
     // of jobs, 3 words each: go on at pc and pos, or (slot >= 0) put a
     // slot back as it was before a save. The stack grows when it must,
@@ -401,12 +479,12 @@ fn backtrack(re: Regex, a: Allocator, s: []u8, start: i64, k: i64, inout m: Buf(
     }
     var top = base
     var p = start
-    while (p <= @len(s)) {
+    while (p <= end) {
         if (re.skip) {
-            while (p < @len(s) and !re.first[@as(i64, s[p])]) {
+            while (p < end and !re.first[@as(i64, s[p])]) {
                 p = p + 1
             }
-            if (p >= @len(s)) {
+            if (p >= end) {
                 return false
             }
         }
@@ -435,7 +513,7 @@ fn backtrack(re: Regex, a: Allocator, s: []u8, start: i64, k: i64, inout m: Buf(
                 var go = false
                 switch (ins.op) {
                     .char, .cls, .any, .any_nl => {
-                        if (pos < @len(s)) {
+                        if (pos < end) {
                             const r = parse.decode(s, pos)
                             if (ins.op == .char) {
                                 go = r.cp == ins.x
@@ -495,7 +573,7 @@ fn backtrack(re: Regex, a: Allocator, s: []u8, start: i64, k: i64, inout m: Buf(
         if (re.anchored) {
             return false
         }
-        p = if (p < @len(s)) p + parse.decode(s, p).len else p + 1
+        p = if (p < end) p + parse.decode(s, p).len else p + 1
     }
     return false
 }
@@ -528,8 +606,9 @@ fn holds(s: []u8, op: prog.Op, pos: i64) bool {
 
 // Runs the program on s from start, Pike's way: all threads step over a
 // character together, so the time is O(len(s) * len(insts)) and the
-// memory O(len(insts)). As run, which calls it for longer texts.
-fn pike(re: Regex, a: Allocator, s: []u8, start: i64, k: i64, earliest: bool, inout m: Buf(i64)) bool {
+// memory O(len(insts)). It reads no further than end (assertions still
+// see past it). As run, which calls it when a DFA runs out of room.
+fn pike(re: Regex, a: Allocator, s: []u8, start: i64, end: i64, k: i64, earliest: bool, inout m: Buf(i64)) bool {
     const n = @len(re.insts)
     const size = 2 * n + n * k
     const tmp = 2 * size
@@ -550,10 +629,10 @@ fn pike(re: Regex, a: Allocator, s: []u8, start: i64, k: i64, earliest: bool, in
     while (true) {
         if (!matched and ncur == 0 and re.skip) {
             // No thread is alive: on to where a match could start.
-            while (pos < @len(s) and !re.first[@as(i64, s[pos])]) {
+            while (pos < end and !re.first[@as(i64, s[pos])]) {
                 pos = pos + 1
             }
-            if (pos >= @len(s)) {
+            if (pos >= end) {
                 break
             }
         }
@@ -569,7 +648,7 @@ fn pike(re: Regex, a: Allocator, s: []u8, start: i64, k: i64, earliest: bool, in
             break
         }
         var r = parse.Rune{ .cp = -1, .len = 1, .ok = false }
-        if (pos < @len(s)) {
+        if (pos < end) {
             r = parse.decode(s, pos)
         }
         var i = 0
@@ -615,7 +694,7 @@ fn pike(re: Regex, a: Allocator, s: []u8, start: i64, k: i64, earliest: bool, in
             }
             i = i + 1
         }
-        if (pos >= @len(s)) {
+        if (pos >= end) {
             break
         }
         pos = pos + r.len

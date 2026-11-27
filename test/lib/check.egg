@@ -4,12 +4,14 @@
 // Go's FindAll), the text with each match replaced by "<$0|${1}>"
 // (replace_all) and by "#" (replace_all_literal), and the pieces split
 // leaves. test/replace.egg checks templates with r. Each case is also
-// run by both engines directly, pike and backtrack, whatever the API
-// chose, and a difference between them is printed, which no expected
+// run by every engine directly, whatever the API chose: pike, backtrack,
+// and the lazy DFA (with room, and with so little that it gives up for
+// pike), and a difference between them is printed, which no expected
 // output has.
 uses alloc, io
 
 const regex = @import("regex")
+const dfa = @import("regex/dfa")
 
 fn spans(a: Allocator, inout out: Buf(u8), caps: Buf(?regex.Span)) void {
     for (caps) |c| {
@@ -93,22 +95,27 @@ fn t(io: Io, a: Allocator, inout count: i64, pattern: []u8, s: []u8) void {
     io.print(n, ": ", out)
 }
 
-// The slots of the leftmost match from both engines, for every group and
-// for the whole match alone, and whether any match: " ENGINES DIFFER"
-// at the end of out if they do not agree.
+// The slots of the leftmost match from every engine, for every group
+// and for the whole match alone, and whether any match: " ENGINES
+// DIFFER" at the end of out if they do not agree.
 fn engines(a: Allocator, inout out: Buf(u8), re: regex.Regex, s: []u8) void {
     var same = true
     for ([_]i64{ 2 * re.ncap, 2, 0 }) |k| {
+        for ([_]i64{ dfa.MAX_WORDS, 1 }) |limit| {
+            if (!with_dfa(a, re, s, k, limit)) {
+                same = false
+            }
+        }
         var x: Buf(i64) = .empty
         defer a.free(x)
         var y: Buf(i64) = .empty
         defer a.free(y)
         var z: Buf(i64) = .empty
         defer a.free(z)
-        const px = regex.pike(re, a, s, 0, k, false, &x)
-        const by = regex.backtrack(re, a, s, 0, k, &y)
+        const px = regex.pike(re, a, s, 0, @len(s), k, false, &x)
+        const by = regex.backtrack(re, a, s, 0, @len(s), k, &y)
         // Any match will do: only whether there is one is the same.
-        const pe = regex.pike(re, a, s, 0, k, true, &z)
+        const pe = regex.pike(re, a, s, 0, @len(s), k, true, &z)
         if (px != by or pe != by) {
             same = false
         }
@@ -125,6 +132,35 @@ fn engines(a: Allocator, inout out: Buf(u8), re: regex.Regex, s: []u8) void {
     if (!same) {
         a.append_str(&out, " ENGINES DIFFER")
     }
+}
+
+// Whether run_dfa, with a DFA of limit words, agrees with pike: the
+// slots, and whether any match.
+fn with_dfa(a: Allocator, re: regex.Regex, s: []u8, k: i64, limit: i64) bool {
+    var x: Buf(i64) = .empty
+    defer a.free(x)
+    const px = regex.pike(re, a, s, 0, @len(s), k, false, &x)
+    var c = dfa.new_cache()
+    defer a.free(c)
+    c.fwd.limit = limit
+    c.rev.limit = limit
+    const d = regex.run_dfa(re, a, s, 0, k, false, &c)
+    if (d != px) {
+        return false
+    }
+    if (d) {
+        var i = 0
+        while (i < k) {
+            if (c.m[i] != x[i]) {
+                return false
+            }
+            i = i + 1
+        }
+    }
+    var e = dfa.new_cache()
+    defer a.free(e)
+    e.fwd.limit = limit
+    return regex.run_dfa(re, a, s, 0, k, true, &e) == px
 }
 
 // s with each match of pattern replaced by template expanded, and with
