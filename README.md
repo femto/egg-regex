@@ -124,10 +124,34 @@ may not be used twice or start with a digit (as in RE2 and Rust).
 ## How
 
 The pattern is parsed to a tree (src/parse.egg) and compiled to a
-program of instructions in Thompson's way (src/prog.egg), which a Pike
-VM runs (src/regex.egg): every thread steps over a character together,
-at most one per instruction, so the time is O(text × pattern) whatever
-the pattern.
+program of instructions in Thompson's way (src/prog.egg), which one of two
+engines runs (src/regex.egg), both O(text × pattern) whatever the
+pattern, as in Go:
+
+- a backtracker, when the program's instructions times the text's length
+  is at most 262,144: depth first, with a bit for each (instruction,
+  position) so that none is tried twice. It is the faster on short texts.
+- a Pike VM otherwise: every thread steps over a character together, at
+  most one per instruction, in memory that does not grow with the text.
+
+Both skip, while no match is under way, to the next byte a match can
+start with, worked out when compiling (`S` for `Sherlock`, a digit for
+`\d+`). A call allocates once or nearly, for its working memory.
+
+`bench/bench.egg` times some cases (`eggc build bench/bench.egg --release
+--pkg regex=src`), and `bench/go/main.go` the same with Go's `regexp`. On
+a 2019 Intel Mac, ms:
+
+| | egg-regex | Go |
+| --- | --- | --- |
+| every `Sherlock` in 1 MB | 9.6 | 5.7 |
+| every `Sherlock\|Watson\|Holmes` | 37.8 | 57.2 |
+| every `\w+@\w+\.com` | 69.5 | 35.7 |
+| every `\d{4}-\d{2}-\d{2}` | 3.7 | 25.7 |
+| every `(?i)sherlock` | 15.0 | 36.5 |
+| `zzz+`, found nowhere | 2.0 | 0.2 |
+| 100,000 `is_match` on short texts | 32.3 | 15.5 |
+| 100,000 `captures` on short texts | 38.8 | 28.0 |
 
 ## Tests
 
@@ -141,4 +165,5 @@ match, the text with the matches replaced, and its pieces split;
 `test/replace.egg` has templates. Their expected output is what Go's
 `regexp` says of the same cases (`go run test/go/main.go`), which CI
 checks again. `test/errors.egg`
-has what is not a pattern, and `test/api.egg` the rest of the API.
+has what is not a pattern, and `test/api.egg` the rest of the API. Every
+case is run by both engines as well, which must agree.

@@ -43,6 +43,11 @@ const Regex = struct {
     anchored: bool
     // The pattern is "", which split treats as Go's Split does.
     empty_pattern: bool
+    // Every match starts with a byte b where first[b], so a search with
+    // no thread alive may skip to the next such byte; false when a match
+    // may be empty or start with anything.
+    skip: bool
+    first: [256]bool
 
     // Whether the pattern matches anywhere in s.
     fn is_match(self: Regex, a: Allocator, s: []u8) bool {
@@ -294,7 +299,9 @@ fn compile_where(a: Allocator, pattern: []u8, inout at: i64) !Regex {
         return e
     }
     const anchored = prog.anchored(t, t.root)
-    const re = Regex{ .insts = insts, .ranges = @take(&t.ranges), .names = @take(&t.names), .groups = @take(&t.groups), .ncap = t.ncap, .anchored = anchored, .empty_pattern = @len(pattern) == 0 }
+    var first: [256]bool = @splat(false)
+    const skip = prog.firsts(a, insts, t.ranges, &first)
+    const re = Regex{ .insts = insts, .ranges = @take(&t.ranges), .names = @take(&t.names), .groups = @take(&t.groups), .ncap = t.ncap, .anchored = anchored, .empty_pattern = @len(pattern) == 0, .skip = skip, .first = first }
     a.free(t)
     return re
 }
@@ -341,60 +348,219 @@ fn group_number(name: []u8) ?i64 {
     return n
 }
 
-// The threads at one position, in priority order: dense[0..n] are their
-// instructions, sparse[pc] where pc is in dense (if it is), and
-// caps[i * k..(i + 1) * k] the slots of thread i.
-const List = struct {
-    dense: Buf(i64)
-    sparse: Buf(i64)
-    caps: Buf(i64)
-    n: i64
+// The VM's memory is one Buf(i64), so that a call allocates once (malloc
+// was most of the time of a short match). Two lists of threads, each at
+// a base b: dense[b..b + n] the instructions of its threads in priority
+// order, sparse[b + n + pc] where pc is in dense (if it is), and the k
+// slots of thread i at b + 2n + i * k. Then k slots being filled, and a
+// stack of jobs for add, 3 words each: an instruction to go on at, or a
+// slot (>= 0) and the value a save took from it, to put back.
+
+// The most bits backtrack's visited set may have, as in Go: past it the
+// Pike VM, whose memory does not grow with the text, runs instead.
+const MAX_BACKTRACK = 262144
+
+// Runs the program on s from start: k slots (2 per group) are wanted,
+// and on a match m[0..k] holds them, -1 for a group that took no part.
+// With earliest, any match will do. m may hold anything when it comes,
+// from an earlier call. Short texts go to backtrack, longer ones to
+// pike; both find the same match.
+fn run(re: Regex, a: Allocator, s: []u8, start: i64, k: i64, earliest: bool, inout m: Buf(i64)) bool {
+    if (@len(re.insts) * (@len(s) - start + 1) <= MAX_BACKTRACK) {
+        return backtrack(re, a, s, start, k, &m)
+    }
+    return pike(re, a, s, start, k, earliest, &m)
 }
 
-fn new_list(a: Allocator, ninsts: i64, k: i64) List {
-    return List{ .dense = a.alloc(ninsts, @as(i64, 0)), .sparse = a.alloc(ninsts, @as(i64, 0)), .caps = a.alloc(ninsts * k, @as(i64, -1)), .n = 0 }
+// The match a depth-first search finds, trying a split's first branch
+// first and each start in turn: the leftmost-first one, as pike finds it.
+// Each state (instruction, position) is tried at most once, from every
+// start alike (one that failed fails again), so the time is still
+// O(len(s) * len(insts)), but with no list of threads to keep: for short
+// texts, where the set of states is small, this is the faster.
+fn backtrack(re: Regex, a: Allocator, s: []u8, start: i64, k: i64, inout m: Buf(i64)) bool {
+    const n = @len(re.insts)
+    const len = @len(s) - start + 1
+    // m: k slots, the visited bits ((pos - start) * n + pc), then a stack
+    // of jobs, 3 words each: go on at pc and pos, or (slot >= 0) put a
+    // slot back as it was before a save. The stack grows when it must,
+    // by doubling, so that a call allocates once or nearly.
+    const words = (n * len + 63) / 64
+    const base = k + words
+    a.resize(&m, base + 6 * (n + 1), 0)
+    // m may come with something in it: every bit starts clear.
+    var j = 0
+    while (j < base) {
+        m[j] = if (j < k) -1 else 0
+        j = j + 1
+    }
+    var top = base
+    var p = start
+    while (p <= @len(s)) {
+        if (re.skip) {
+            while (p < @len(s) and !re.first[@as(i64, s[p])]) {
+                p = p + 1
+            }
+            if (p >= @len(s)) {
+                return false
+            }
+        }
+        m[top] = 0
+        m[top + 1] = p
+        m[top + 2] = -1
+        top = top + 3
+        while (top > base) {
+            top = top - 3
+            var pc = m[top]
+            var pos = m[top + 1]
+            const slot = m[top + 2]
+            if (slot >= 0) {
+                m[slot] = pos
+                continue
+            }
+            while (true) {
+                const bit = (pos - start) * n + pc
+                const word = k + bit / 64
+                const mask = @as(i64, 1) << (bit % 64)
+                if ((m[word] & mask) != 0) {
+                    break
+                }
+                m[word] = m[word] | mask
+                const ins = re.insts[pc]
+                var go = false
+                switch (ins.op) {
+                    .char, .cls, .any, .any_nl => {
+                        if (pos < @len(s)) {
+                            const r = parse.decode(s, pos)
+                            if (ins.op == .char) {
+                                go = r.cp == ins.x
+                            } else if (ins.op == .cls) {
+                                go = in_class(re, ins.x, ins.y, r.cp)
+                            } else {
+                                go = ins.op == .any_nl or r.cp != 10
+                            }
+                            if (go) {
+                                pos = pos + r.len
+                            }
+                        }
+                    }
+                    .match => {
+                        return true
+                    }
+                    .jmp => {
+                        pc = ins.x - 1
+                        go = true
+                    }
+                    .split => {
+                        if (top + 3 > @len(m)) {
+                            const grown = 2 * @len(m)
+                            a.resize(&m, grown, 0)
+                        }
+                        m[top] = ins.y
+                        m[top + 1] = pos
+                        m[top + 2] = -1
+                        top = top + 3
+                        pc = ins.x - 1
+                        go = true
+                    }
+                    .save => {
+                        if (ins.x < k) {
+                            if (top + 3 > @len(m)) {
+                                const grown = 2 * @len(m)
+                            a.resize(&m, grown, 0)
+                            }
+                            m[top] = 0
+                            m[top + 1] = m[ins.x]
+                            m[top + 2] = ins.x
+                            top = top + 3
+                            m[ins.x] = pos
+                        }
+                        go = true
+                    }
+                    else => {
+                        go = holds(s, ins.op, pos)
+                    }
+                }
+                if (!go) {
+                    break
+                }
+                pc = pc + 1
+            }
+        }
+        if (re.anchored) {
+            return false
+        }
+        p = if (p < @len(s)) p + parse.decode(s, p).len else p + 1
+    }
+    return false
 }
 
-fn has(l: List, pc: i64) bool {
-    const i = l.sparse[pc]
-    return i < l.n and l.dense[i] == pc
-}
-
-// What add has left to do: go on at pc, or (slot >= 0) put val back in
-// a slot that a save changed, once every path after the save is done.
-const Job = struct {
-    pc: i64
-    slot: i64
-    val: i64
+// Whether the assertion op holds at pos in s.
+fn holds(s: []u8, op: prog.Op, pos: i64) bool {
+    switch (op) {
+        .begin_line => {
+            return pos == 0 or s[pos - 1] == '\n'
+        }
+        .end_line => {
+            return pos == @len(s) or s[pos] == '\n'
+        }
+        .begin_text => {
+            return pos == 0
+        }
+        .end_text => {
+            return pos == @len(s)
+        }
+        .word, .not_word => {
+            const before = pos > 0 and is_word(s[pos - 1])
+            const after = pos < @len(s) and is_word(s[pos])
+            return (before != after) == (op == .word)
+        }
+        else => {
+            return false
+        }
+    }
 }
 
 // Runs the program on s from start, Pike's way: all threads step over a
-// character together, so the time is O(len(s) * len(insts)). k slots
-// (2 per group) are wanted; on a match, out holds them, -1 for a group
-// that took no part. With earliest, any match will do.
-fn run(re: Regex, a: Allocator, s: []u8, start: i64, k: i64, earliest: bool, inout out: Buf(i64)) bool {
+// character together, so the time is O(len(s) * len(insts)) and the
+// memory O(len(insts)). As run, which calls it for longer texts.
+fn pike(re: Regex, a: Allocator, s: []u8, start: i64, k: i64, earliest: bool, inout m: Buf(i64)) bool {
     const n = @len(re.insts)
-    var lists: Buf(List) = .empty
-    defer a.free(lists)
-    a.push(&lists, new_list(a, n, k))
-    a.push(&lists, new_list(a, n, k))
-    var stack: Buf(Job) = .empty
-    defer a.free(stack)
-    var tmp = a.alloc(k, @as(i64, -1))
-    defer a.free(tmp)
-    a.resize(&out, k, -1)
+    const size = 2 * n + n * k
+    const tmp = 2 * size
+    const best = tmp + k
+    const stack = best + k
+    a.resize(&m, stack + 3 * n + 3, 0)
+    var cur = 0
+    var ncur = 0
+    var nxt = size
+    var nnxt = 0
+    var j = 0
+    while (j < k) {
+        m[best + j] = -1
+        j = j + 1
+    }
     var matched = false
     var pos = start
     while (true) {
+        if (!matched and ncur == 0 and re.skip) {
+            // No thread is alive: on to where a match could start.
+            while (pos < @len(s) and !re.first[@as(i64, s[pos])]) {
+                pos = pos + 1
+            }
+            if (pos >= @len(s)) {
+                break
+            }
+        }
         if (!matched and (!re.anchored or pos == 0)) {
-            var j = 0
+            j = 0
             while (j < k) {
-                tmp[j] = -1
+                m[tmp + j] = -1
                 j = j + 1
             }
-            add(re, a, s, &lists[0], &stack, &tmp, k, 0, pos)
+            add(re, s, &m, cur, &ncur, k, tmp, stack, 0, pos)
         }
-        if (lists[0].n == 0 and (matched or (re.anchored and pos > 0))) {
+        if (ncur == 0 and (matched or (re.anchored and pos > 0))) {
             break
         }
         var r = parse.Rune{ .cp = -1, .len = 1, .ok = false }
@@ -402,8 +568,8 @@ fn run(re: Regex, a: Allocator, s: []u8, start: i64, k: i64, earliest: bool, ino
             r = parse.decode(s, pos)
         }
         var i = 0
-        while (i < lists[0].n) {
-            const pc = lists[0].dense[i]
+        while (i < ncur) {
+            const pc = m[cur + i]
             const ins = re.insts[pc]
             var takes = false
             switch (ins.op) {
@@ -411,9 +577,9 @@ fn run(re: Regex, a: Allocator, s: []u8, start: i64, k: i64, earliest: bool, ino
                     if (earliest) {
                         return true
                     }
-                    var j = 0
+                    j = 0
                     while (j < k) {
-                        out[j] = lists[0].caps[i * k + j]
+                        m[best + j] = m[cur + 2 * n + i * k + j]
                         j = j + 1
                     }
                     matched = true
@@ -435,12 +601,12 @@ fn run(re: Regex, a: Allocator, s: []u8, start: i64, k: i64, earliest: bool, ino
                 else => {}
             }
             if (takes) {
-                var j = 0
+                j = 0
                 while (j < k) {
-                    tmp[j] = lists[0].caps[i * k + j]
+                    m[tmp + j] = m[cur + 2 * n + i * k + j]
                     j = j + 1
                 }
-                add(re, a, s, &lists[1], &stack, &tmp, k, pc + 1, pos + r.len)
+                add(re, s, &m, nxt, &nnxt, k, tmp, stack, pc + 1, pos + r.len)
             }
             i = i + 1
         }
@@ -448,28 +614,47 @@ fn run(re: Regex, a: Allocator, s: []u8, start: i64, k: i64, earliest: bool, ino
             break
         }
         pos = pos + r.len
-        @swap(&lists, 0, 1)
-        lists[1].n = 0
+        const was = cur
+        cur = nxt
+        nxt = was
+        ncur = nnxt
+        nnxt = 0
+    }
+    j = 0
+    while (j < k) {
+        m[j] = m[best + j]
+        j = j + 1
     }
     return matched
 }
 
-// Adds the thread at pc, with the slots in caps, to l, following jumps,
-// splits (the first branch first), saves and assertions at pos to the
-// instructions that consume a character or match.
-fn add(re: Regex, a: Allocator, s: []u8, inout l: List, inout stack: Buf(Job), inout caps: Buf(i64), k: i64, start: i64, pos: i64) void {
-    a.push(&stack, Job{ .pc = start, .slot = -1, .val = 0 })
-    while (a.pop(&stack)) |job| {
-        if (job.slot >= 0) {
-            caps[job.slot] = job.val
+// Adds the thread at start, with the slots at m[tmp..tmp + k], to the
+// list at base b holding count threads, following jumps, splits (the
+// first branch first), saves and assertions at pos to the instructions
+// that consume a character or match.
+fn add(re: Regex, s: []u8, inout m: Buf(i64), b: i64, inout count: i64, k: i64, tmp: i64, stack: i64, start: i64, pos: i64) void {
+    const n = @len(re.insts)
+    var top = stack
+    m[top] = start
+    m[top + 1] = -1
+    top = top + 3
+    while (top > stack) {
+        top = top - 3
+        if (m[top + 1] >= 0) {
+            m[tmp + m[top + 1]] = m[top + 2]
             continue
         }
-        var pc = job.pc
-        while (!has(l, pc)) {
-            l.sparse[pc] = l.n
-            l.dense[l.n] = pc
-            const i = l.n
-            l.n = l.n + 1
+        var pc = m[top]
+        while (true) {
+            // sparse may hold anything where pc was never added.
+            const at = m[b + n + pc]
+            if (at >= 0 and at < count and m[b + at] == pc) {
+                break
+            }
+            m[b + n + pc] = count
+            m[b + count] = pc
+            const i = count
+            count = count + 1
             const ins = re.insts[pc]
             var next = -1
             switch (ins.op) {
@@ -477,40 +662,22 @@ fn add(re: Regex, a: Allocator, s: []u8, inout l: List, inout stack: Buf(Job), i
                     next = ins.x
                 }
                 .split => {
-                    a.push(&stack, Job{ .pc = ins.y, .slot = -1, .val = 0 })
+                    m[top] = ins.y
+                    m[top + 1] = -1
+                    top = top + 3
                     next = ins.x
                 }
                 .save => {
                     if (ins.x < k) {
-                        a.push(&stack, Job{ .pc = 0, .slot = ins.x, .val = caps[ins.x] })
-                        caps[ins.x] = pos
+                        m[top + 1] = ins.x
+                        m[top + 2] = m[tmp + ins.x]
+                        top = top + 3
+                        m[tmp + ins.x] = pos
                     }
                     next = pc + 1
                 }
-                .begin_line => {
-                    if (pos == 0 or s[pos - 1] == '\n') {
-                        next = pc + 1
-                    }
-                }
-                .end_line => {
-                    if (pos == @len(s) or s[pos] == '\n') {
-                        next = pc + 1
-                    }
-                }
-                .begin_text => {
-                    if (pos == 0) {
-                        next = pc + 1
-                    }
-                }
-                .end_text => {
-                    if (pos == @len(s)) {
-                        next = pc + 1
-                    }
-                }
-                .word, .not_word => {
-                    const before = pos > 0 and is_word(s[pos - 1])
-                    const after = pos < @len(s) and is_word(s[pos])
-                    if ((before != after) == (ins.op == .word)) {
+                .begin_line, .end_line, .begin_text, .end_text, .word, .not_word => {
+                    if (holds(s, ins.op, pos)) {
                         next = pc + 1
                     }
                 }
@@ -518,7 +685,7 @@ fn add(re: Regex, a: Allocator, s: []u8, inout l: List, inout stack: Buf(Job), i
                     // Consumes or matches: it keeps the slots as they are.
                     var j = 0
                     while (j < k) {
-                        l.caps[i * k + j] = caps[j]
+                        m[b + 2 * n + i * k + j] = m[tmp + j]
                         j = j + 1
                     }
                 }

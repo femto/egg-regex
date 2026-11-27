@@ -1,0 +1,86 @@
+// How fast matching is, on texts made here so that every run sees the
+// same ones: `clutch run`-free, build it with
+//   eggc build bench/bench.egg --release --pkg regex=src -o build/bench
+// bench/go/main.go does the same cases with Go's regexp, for comparison.
+uses alloc, io, time
+
+const regex = @import("regex")
+
+// About 1 MB of words with, now and then, an email address and a date.
+fn text(a: Allocator) Buf(u8) {
+    var out: Buf(u8) = .empty
+    const words = [_]str{ "the", "quick", "brown", "fox", "jumps", "over", "lazy", "dog", "Sherlock", "Holmes", "and", "Watson" }
+    var seed: u64 = 1
+    var i = 0
+    while (@len(out) < 1000000) {
+        seed = seed *% 6364136223846793005 +% 1442695040888963407
+        const w = @as(i64, (seed >> 33) % 12)
+        a.append_str(&out, words[w])
+        if (i % 97 == 0) {
+            a.append_str(&out, " bob")
+            a.append_int(&out, i)
+            a.append_str(&out, "@example.com")
+        }
+        if (i % 131 == 0) {
+            a.append_str(&out, " 2026-11-")
+            a.append_int(&out, 10 + i % 18)
+        }
+        a.push(&out, if (i % 13 == 12) '\n' else ' ')
+        i = i + 1
+    }
+    return out
+}
+
+fn count(io: Io, a: Allocator, clock: Clock, name: str, pattern: []u8, s: []u8) !void {
+    const re = try regex.compile(a, pattern)
+    defer a.free(re)
+    const t0 = clock.monotonic()
+    var n = 0
+    var it = regex.iter()
+    while (re.next(a, s, &it)) |m| {
+        n = n + 1 + m.len() * 0
+    }
+    const us = (clock.monotonic() - t0) / 1000
+    io.print(name, ": ", n, " matches in ", us / 1000, ".", (us % 1000) / 100, " ms")
+}
+
+fn main(io: Io, a: Allocator, clock: Clock) !void {
+    const s = text(a)
+    defer a.free(s)
+    try count(io, a, clock, "literal Sherlock", "Sherlock", s)
+    try count(io, a, clock, "alternation", "Sherlock|Watson|Holmes", s)
+    try count(io, a, clock, "email", "\\w+@\\w+\\.com", s)
+    try count(io, a, clock, "date", "\\d{4}-\\d{2}-\\d{2}", s)
+    try count(io, a, clock, "case-insensitive", "(?i)sherlock", s)
+    try count(io, a, clock, "rare", "zzz+", s)
+    // Many short texts, one call each: the cost of a call, not of a text.
+    const email = try regex.compile(a, "^[\\w.+-]+@[\\w-]+(\\.[\\w-]+)+$")
+    defer a.free(email)
+    const tries = [_]str{ "bob@example.com", "not an email", "a.b+c@d-e.org", "x@y" }
+    const t0 = clock.monotonic()
+    var ok = 0
+    var k = 0
+    while (k < 100000) {
+        if (email.is_match(a, tries[k % 4])) {
+            ok = ok + 1
+        }
+        k = k + 1
+    }
+    const us = (clock.monotonic() - t0) / 1000
+    io.print("100000 short is_match: ", ok, " true in ", us / 1000, ".", (us % 1000) / 100, " ms")
+    const date = try regex.compile(a, "(\\d{4})-(\\d{2})-(\\d{2})")
+    defer a.free(date)
+    var caps: Buf(?regex.Span) = .empty
+    defer a.free(caps)
+    const t1 = clock.monotonic()
+    var found = 0
+    var j = 0
+    while (j < 100000) {
+        if (date.captures(a, "due 2026-11-27 or so", &caps)) {
+            found = found + 1
+        }
+        j = j + 1
+    }
+    const us1 = (clock.monotonic() - t1) / 1000
+    io.print("100000 short captures: ", found, " in ", us1 / 1000, ".", (us1 % 1000) / 100, " ms")
+}
