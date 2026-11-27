@@ -134,6 +134,9 @@ fn main(io: Io, a: Allocator) void {
     check.t(io, a, &n, "\\B", "ab cd")
     check.t(io, a, &n, "\\b", "")
     check.t(io, a, &n, "\\B", "")
+    // An assertion in a loop: the DFA must not go round it twice.
+    check.t(io, a, &n, "(?:\\b|b)*", "b")
+    check.t(io, a, &n, "(\\b|b)*", "bb")
     // Flags.
     check.t(io, a, &n, "(?i)hello", "Say HeLLo")
     check.t(io, a, &n, "(?i)[a-c]+", "xAbCd")

@@ -115,40 +115,40 @@
 115: (1,1) true all 1-1 4-4 repl "a<|>b c<|>d" lit "a#b c#d" split "a" "b c" "d"
 116: no false repl "" lit "" split ""
 117: (0,0) true all 0-0 repl "<|>" lit "#" split ""
-118: (4,9) true all 4-9 repl "Say <HeLLo|>" lit "Say #" split "Say " ""
-119: (1,4) true all 1-4 repl "x<AbC|>d" lit "x#d" split "x" "d"
-120: (2,4) true all 2-4 repl "Aa<Bb|>" lit "Aa#" split "Aa" ""
-121: (0,2) true all 0-2 repl "<aB|> AB" lit "# AB" split "" " AB"
-122: (0,2) true all 0-2 repl "<Ab|> AB" lit "# AB" split "" " AB"
-123: (3,5) true all 3-5 repl "AB <Ab|>" lit "AB #" split "AB " ""
-124: (0,3)(0,2) true all 0-3 repl "<aBc|aB> aBC" lit "# aBC" split "" " aBC"
-125: (0,2) true all 0-2 3-4 repl "<xY|> <Z|>" lit "# #" split "" " " ""
-126: (2,5) true all 2-5 repl "x\x0a<a\x0ab|>\x0ay" lit "x\x0a#\x0ay" split "x\x0a" "\x0ay"
-127: (0,14) true all 0-14 repl "<.*+?()[]{}|^$\x5c|>" lit "#" split "" ""
-128: (4,9) true all 4-9 repl "ABC <AB\xe6\x97\xa5|>" lit "ABC #" split "ABC " ""
-129: (1,3) true all 1-3 repl "a<\x09\x0a|>b" lit "a#b" split "a" "b"
-130: (0,3) true all 0-3 repl "<a-b|>" lit "#" split "" ""
-131: (0,2) true all 0-2 repl "<# |>" lit "#" split "" ""
-132: (0,1) true all 0-1 repl "<\xff|>" lit "#" split "" ""
-133: (0,3) true all 0-3 repl "<a\xffb|>" lit "#" split "" ""
-134: (0,2) true all 0-2 repl "<\xff\xfe|>" lit "#" split "" ""
-135: (0,1) true all 0-1 repl "<\xff|>" lit "#" split "" ""
-136: (1,3) true all 1-3 repl "\xff<aa|>\xff" lit "\xff#\xff" split "\xff" "\xff"
-137: (0,3) true all 0-3 repl "<abc|>" lit "#" split "" ""
-138: (0,2)(-)(-) true all 0-2 repl "<ab|>d" lit "#d" split "" "d"
-139: (0,0) true all 0-0 1-5 repl "<|>x<aabb|>" lit "#x#" split "x" ""
-140: (0,3) true all 0-3 repl "<foo|>bar" lit "#bar" split "" "bar"
-141: (0,6)(0,6) true all 0-6 repl "<foobar|foobar>" lit "#" split "" ""
-142: (5,20)(5,8)(9,16) true all 5-20 22-34 repl "mail <bob@example.com|bob>, <eve@corp.com|eve>" lit "mail #, #" split "mail " ", " ""
-143: (8,15)(8,10)(11,13)(14,15) true all 8-15 repl "version <10.24.3|10>-beta" lit "version #-beta" split "version " "-beta"
-144: (0,24)(0,3)(4,15) true all 0-24 repl "<GET /index.html HTTP/1.1|GET>" lit "#" split "" ""
-145: (3,8)(3,8)(6,8)(-) true all 3-8 12-16 repl "an <Error|Error>, a <WARN|WARN>, no warns" lit "an #, a #, no warns" split "an " ", a " ", no warns"
-146: (4,10)(8,9) true all 4-10 repl "say <\x22a\x5c\x22b\x22|b> ok" lit "say # ok" split "say " " ok"
-147: (0,31)(29,30) true all 0-31 repl "<aaaaaaaaaaaaaaaaaaaaaaaaaaaaaab|a>" lit "#" split "" ""
-148: no false repl "xxxxxxxxxxxxxxxxxxxxxxxxx" lit "xxxxxxxxxxxxxxxxxxxxxxxxx" split "xxxxxxxxxxxxxxxxxxxxxxxxx"
-149: (5,11) true all 5-11 14-21 repl "ab12 <abcd12|>3 a<bcdef45|>" lit "ab12 #3 a#" split "ab12 " "3 a" ""
-150: error
-151: error
+118: (0,0) true all 0-0 1-1 repl "<|>b<|>" lit "#b#" split "b"
+119: (0,0)(0,0) true all 0-0 1-2 repl "<|>b<b|b>" lit "#b#" split "b" ""
+120: (4,9) true all 4-9 repl "Say <HeLLo|>" lit "Say #" split "Say " ""
+121: (1,4) true all 1-4 repl "x<AbC|>d" lit "x#d" split "x" "d"
+122: (2,4) true all 2-4 repl "Aa<Bb|>" lit "Aa#" split "Aa" ""
+123: (0,2) true all 0-2 repl "<aB|> AB" lit "# AB" split "" " AB"
+124: (0,2) true all 0-2 repl "<Ab|> AB" lit "# AB" split "" " AB"
+125: (3,5) true all 3-5 repl "AB <Ab|>" lit "AB #" split "AB " ""
+126: (0,3)(0,2) true all 0-3 repl "<aBc|aB> aBC" lit "# aBC" split "" " aBC"
+127: (0,2) true all 0-2 3-4 repl "<xY|> <Z|>" lit "# #" split "" " " ""
+128: (2,5) true all 2-5 repl "x\x0a<a\x0ab|>\x0ay" lit "x\x0a#\x0ay" split "x\x0a" "\x0ay"
+129: (0,14) true all 0-14 repl "<.*+?()[]{}|^$\x5c|>" lit "#" split "" ""
+130: (4,9) true all 4-9 repl "ABC <AB\xe6\x97\xa5|>" lit "ABC #" split "ABC " ""
+131: (1,3) true all 1-3 repl "a<\x09\x0a|>b" lit "a#b" split "a" "b"
+132: (0,3) true all 0-3 repl "<a-b|>" lit "#" split "" ""
+133: (0,2) true all 0-2 repl "<# |>" lit "#" split "" ""
+134: (0,1) true all 0-1 repl "<\xff|>" lit "#" split "" ""
+135: (0,3) true all 0-3 repl "<a\xffb|>" lit "#" split "" ""
+136: (0,2) true all 0-2 repl "<\xff\xfe|>" lit "#" split "" ""
+137: (0,1) true all 0-1 repl "<\xff|>" lit "#" split "" ""
+138: (1,3) true all 1-3 repl "\xff<aa|>\xff" lit "\xff#\xff" split "\xff" "\xff"
+139: (0,3) true all 0-3 repl "<abc|>" lit "#" split "" ""
+140: (0,2)(-)(-) true all 0-2 repl "<ab|>d" lit "#d" split "" "d"
+141: (0,0) true all 0-0 1-5 repl "<|>x<aabb|>" lit "#x#" split "x" ""
+142: (0,3) true all 0-3 repl "<foo|>bar" lit "#bar" split "" "bar"
+143: (0,6)(0,6) true all 0-6 repl "<foobar|foobar>" lit "#" split "" ""
+144: (5,20)(5,8)(9,16) true all 5-20 22-34 repl "mail <bob@example.com|bob>, <eve@corp.com|eve>" lit "mail #, #" split "mail " ", " ""
+145: (8,15)(8,10)(11,13)(14,15) true all 8-15 repl "version <10.24.3|10>-beta" lit "version #-beta" split "version " "-beta"
+146: (0,24)(0,3)(4,15) true all 0-24 repl "<GET /index.html HTTP/1.1|GET>" lit "#" split "" ""
+147: (3,8)(3,8)(6,8)(-) true all 3-8 12-16 repl "an <Error|Error>, a <WARN|WARN>, no warns" lit "an #, a #, no warns" split "an " ", a " ", no warns"
+148: (4,10)(8,9) true all 4-10 repl "say <\x22a\x5c\x22b\x22|b> ok" lit "say # ok" split "say " " ok"
+149: (0,31)(29,30) true all 0-31 repl "<aaaaaaaaaaaaaaaaaaaaaaaaaaaaaab|a>" lit "#" split "" ""
+150: no false repl "xxxxxxxxxxxxxxxxxxxxxxxxx" lit "xxxxxxxxxxxxxxxxxxxxxxxxx" split "xxxxxxxxxxxxxxxxxxxxxxxxx"
+151: (5,11) true all 5-11 14-21 repl "ab12 <abcd12|>3 a<bcdef45|>" lit "ab12 #3 a#" split "ab12 " "3 a" ""
 152: error
 153: error
 154: error
@@ -164,9 +164,11 @@
 164: error
 165: error
 166: error
-167: (0,0) true all 0-0 repl "<|>" lit "#" split ""
+167: error
 168: error
-169: error
+169: (0,0) true all 0-0 repl "<|>" lit "#" split ""
 170: error
 171: error
 172: error
+173: error
+174: error
