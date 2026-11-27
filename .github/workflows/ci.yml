@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  # The oldest Egg this package supports (README).
+  EGG_REPO: femto/egg
+  EGG_REF: 8dfb793972f04bb7109168dccea5360733cffe33 # v0.2.2
+
+jobs:
+  test:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    env:
+      CC: ${{ matrix.os == 'windows-latest' && 'gcc' || 'cc' }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - run: git config --global core.autocrlf false
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          repository: ${{ env.EGG_REPO }}
+          ref: ${{ env.EGG_REF }}
+          path: .egg
+          persist-credentials: false
+      # Egg's eggc and clutch run on Ruby; on Windows, setup-ruby's MSYS2
+      # gcc compiles the C.
+      - uses: ruby/setup-ruby@7f797815d8adceb1c412e7abefdd1ab4abc47a5f # v1
+        with:
+          ruby-version: "3.3"
+      - name: clutch test
+        run: ruby .egg/bin/clutch test
+
+  # The expected output of test/match.egg and test/random.egg is what Go's
+  # regexp says: made again here, it must not have changed.
+  go:
+    name: against Go's regexp
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
+        with:
+          go-version: "1.27"
+      - name: Go agrees with the expected output
+        run: |
+          go run test/gen/main.go | diff test/random.egg -
+          go run test/go/main.go | diff test/match.expected -
+          go run test/go/main.go test/random.egg | diff test/random.expected -

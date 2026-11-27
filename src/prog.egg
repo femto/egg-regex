@@ -1,0 +1,252 @@
+// The program a tree compiles to, as in Thompson's construction and
+// RE2: instructions that each consume a character, branch or record a
+// position, run by the Pike VM in regex.egg.
+uses alloc
+
+const parse = @import("parse.egg")
+
+// The most instructions a program may have, so that a pattern such as
+// (a{1000}){1000} is refused rather than taking all the memory.
+const MAX_INSTS = 100000
+
+// char: the code point x. cls: one of ranges[x..x + y]. any: a code
+// point but \n; any_nl: any. split: go on at x, and at y with a lower
+// priority. jmp: go on at x. save: record the position in slot x. The
+// assertions match the empty string where they hold. match: done.
+const Op = enum { char, cls, any, any_nl, split, jmp, save, begin_line, end_line, begin_text, end_text, word, not_word, match }
+
+const Inst = struct {
+    op: Op
+    x: i64
+    y: i64
+}
+
+// The program of t: save 0, the tree, save 1, match. Matching from any
+// position, not just the start, is the VM's job.
+fn compile(a: Allocator, t: parse.Ast) !Buf(Inst) {
+    var insts: Buf(Inst) = .empty
+    errdefer a.free(insts)
+    try push(a, &insts, .save, 0, 0)
+    try emit(a, t, t.root, &insts)
+    try push(a, &insts, .save, 1, 0)
+    try push(a, &insts, .match, 0, 0)
+    return insts
+}
+
+fn push(a: Allocator, inout insts: Buf(Inst), op: Op, x: i64, y: i64) !void {
+    if (@len(insts) >= MAX_INSTS) {
+        return error.TooBig
+    }
+    a.push(&insts, Inst{ .op = op, .x = x, .y = y })
+}
+
+fn emit(a: Allocator, t: parse.Ast, n: i64, inout insts: Buf(Inst)) !void {
+    const node = t.nodes[n]
+    switch (node.kind) {
+        .empty => {}
+        .lit => {
+            try push(a, &insts, .char, node.a, 0)
+        }
+        .cls => {
+            try push(a, &insts, .cls, node.a, node.b)
+        }
+        .any => {
+            try push(a, &insts, .any, 0, 0)
+        }
+        .any_nl => {
+            try push(a, &insts, .any_nl, 0, 0)
+        }
+        .begin_line => {
+            try push(a, &insts, .begin_line, 0, 0)
+        }
+        .end_line => {
+            try push(a, &insts, .end_line, 0, 0)
+        }
+        .begin_text => {
+            try push(a, &insts, .begin_text, 0, 0)
+        }
+        .end_text => {
+            try push(a, &insts, .end_text, 0, 0)
+        }
+        .word => {
+            try push(a, &insts, .word, 0, 0)
+        }
+        .not_word => {
+            try push(a, &insts, .not_word, 0, 0)
+        }
+        .cat => {
+            var i = 0
+            while (i < node.b) {
+                try emit(a, t, t.kids[node.a + i], &insts)
+                i = i + 1
+            }
+        }
+        .alt => {
+            // split L1, L2; L1: first; jmp end; L2: split ... ; last; end:
+            var jumps: Buf(i64) = .empty
+            defer a.free(jumps)
+            var i = 0
+            while (i < node.b - 1) {
+                const at = @len(insts)
+                try push(a, &insts, .split, at + 1, 0)
+                try emit(a, t, t.kids[node.a + i], &insts)
+                a.push(&jumps, @len(insts))
+                try push(a, &insts, .jmp, 0, 0)
+                insts[at].y = @len(insts)
+                i = i + 1
+            }
+            try emit(a, t, t.kids[node.a + node.b - 1], &insts)
+            for (jumps) |j| {
+                insts[j].x = @len(insts)
+            }
+        }
+        .group => {
+            try push(a, &insts, .save, 2 * node.b, 0)
+            try emit(a, t, node.a, &insts)
+            try push(a, &insts, .save, 2 * node.b + 1, 0)
+        }
+        .rep => {
+            try repeat(a, t, node, &insts)
+        }
+    }
+}
+
+// x{min,max}: min copies of x, then either a loop (no max) or max - min
+// optional copies, each a split that prefers going in when greedy.
+fn repeat(a: Allocator, t: parse.Ast, node: parse.Node, inout insts: Buf(Inst)) !void {
+    const x = node.a
+    const min = node.b
+    const max = node.c
+    if (max < 0 and min == 0 and nullable(t, x)) {
+        // x*, where x can match the empty string: (x+)? as Go compiles it,
+        // so that a loop around once without consuming keeps x's groups
+        // ((a*)* on "b" has group 1 at 0..0).
+        const skip = @len(insts)
+        try push(a, &insts, .split, 0, 0)
+        const loop = @len(insts)
+        try emit(a, t, x, &insts)
+        const next = @len(insts) + 1
+        if (node.greedy) {
+            try push(a, &insts, .split, loop, next)
+        } else {
+            try push(a, &insts, .split, next, loop)
+        }
+        const end = @len(insts)
+        branch(&insts, skip, loop, end, node.greedy)
+        return
+    }
+    if (max < 0 and min > 0) {
+        // x{min,}: min - 1 copies, then x+ as L: x; split L, next.
+        var i = 0
+        while (i < min - 1) {
+            try emit(a, t, x, &insts)
+            i = i + 1
+        }
+        const loop = @len(insts)
+        try emit(a, t, x, &insts)
+        const next = @len(insts) + 1
+        if (node.greedy) {
+            try push(a, &insts, .split, loop, next)
+        } else {
+            try push(a, &insts, .split, next, loop)
+        }
+        return
+    }
+    var i = 0
+    while (i < min) {
+        try emit(a, t, x, &insts)
+        i = i + 1
+    }
+    if (max < 0) {
+        // x*: L: split body, end; body: x; jmp L; end:
+        const loop = @len(insts)
+        try push(a, &insts, .split, 0, 0)
+        try emit(a, t, x, &insts)
+        try push(a, &insts, .jmp, loop, 0)
+        const end = @len(insts)
+        branch(&insts, loop, loop + 1, end, node.greedy)
+        return
+    }
+    // x? max - min times, nested: each split skips to the very end.
+    var splits: Buf(i64) = .empty
+    defer a.free(splits)
+    var k = min
+    while (k < max) {
+        a.push(&splits, @len(insts))
+        try push(a, &insts, .split, 0, 0)
+        try emit(a, t, x, &insts)
+        k = k + 1
+    }
+    const end = @len(insts)
+    for (splits) |at| {
+        branch(&insts, at, at + 1, end, node.greedy)
+    }
+}
+
+// The split at `at` between going into the body and skipping to end,
+// preferring the body when greedy.
+fn branch(inout insts: Buf(Inst), at: i64, body: i64, end: i64, greedy: bool) void {
+    if (greedy) {
+        insts[at].x = body
+        insts[at].y = end
+    } else {
+        insts[at].x = end
+        insts[at].y = body
+    }
+}
+
+// Whether n can match the empty string.
+fn nullable(t: parse.Ast, n: i64) bool {
+    const node = t.nodes[n]
+    switch (node.kind) {
+        .lit, .cls, .any, .any_nl => {
+            return false
+        }
+        .cat => {
+            var i = 0
+            while (i < node.b) {
+                if (!nullable(t, t.kids[node.a + i])) {
+                    return false
+                }
+                i = i + 1
+            }
+            return true
+        }
+        .alt => {
+            var i = 0
+            while (i < node.b) {
+                if (nullable(t, t.kids[node.a + i])) {
+                    return true
+                }
+                i = i + 1
+            }
+            return false
+        }
+        .rep => {
+            return node.b == 0 or nullable(t, node.a)
+        }
+        .group => {
+            return nullable(t, node.a)
+        }
+        else => {
+            // empty, and the assertions, which consume nothing.
+            return true
+        }
+    }
+}
+
+// Whether every match of n must start at the start of the text, so that
+// the VM need not try other positions.
+fn anchored(t: parse.Ast, n: i64) bool {
+    const node = t.nodes[n]
+    if (node.kind == .begin_text) {
+        return true
+    }
+    if (node.kind == .cat) {
+        return node.b > 0 and anchored(t, t.kids[node.a])
+    }
+    if (node.kind == .group) {
+        return anchored(t, node.a)
+    }
+    return false
+}
