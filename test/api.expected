@@ -17,4 +17,11 @@ none
 24-26 len 2
 false 0
 1-2 len 1
+a is [1]
+b is []
+c is [33]
+false 0
+none
+0-3 len 3
+4-7 len 3
 0 true false

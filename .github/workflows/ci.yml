@@ -63,3 +63,4 @@ jobs:
           go run test/gen/main.go | diff test/random.egg -
           go run test/go/main.go | diff test/match.expected -
           go run test/go/main.go test/random.egg | diff test/random.expected -
+          go run test/go/main.go test/replace.egg | diff test/replace.expected -

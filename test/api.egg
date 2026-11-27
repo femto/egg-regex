@@ -49,6 +49,23 @@ fn main(io: Io, a: Allocator) !void {
     const dot = try regex.compile(a, ".")
     defer a.free(dot)
     show(io, dot.find_at(a, "日x", 1))
+    // Going through the matches, with and without groups; an Iter that
+    // is done stays done.
+    const kv = try regex.compile(a, "(\\w+)=(\\w*)")
+    defer a.free(kv)
+    const pairs = "a=1, b=, c=33"
+    var it = regex.iter()
+    while (kv.next_captures(a, pairs, &it, &caps)) {
+        const k = caps[1] orelse continue
+        const v = caps[2] orelse continue
+        io.print(pairs[k.start..k.end], " is [", pairs[v.start..v.end], "]")
+    }
+    io.print(kv.next_captures(a, pairs, &it, &caps), " ", @len(caps))
+    show(io, kv.next(a, pairs, &it))
+    var words = regex.iter()
+    while (kv.next(a, "x=y z=w", &words)) |m| {
+        show(io, m)
+    }
     const none = try regex.compile(a, "a")
     defer a.free(none)
     io.print(none.group_count(), " ", none.is_match(a, "bab"), " ", none.is_match(a, "bbb"))
