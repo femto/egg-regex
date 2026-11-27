@@ -12,7 +12,7 @@ so limit how long one may be as well. The price is what needs
 backtracking: back-references and lookaround are not supported.
 
 ```
-clutch add regex --git https://github.com/femto/egg-regex
+clutch add regex
 ```
 
 ```egg
@@ -33,7 +33,13 @@ fn main(io: Io, a: Allocator) !void {
 }
 ```
 
-It needs [Egg](https://github.com/femto/egg) 0.2.2 or later.
+It needs [Egg](https://github.com/femto/egg) 0.2.2 or later. In a
+project's `clutch.toml`:
+
+```toml
+[dependencies]
+regex = "~> 0.1"
+```
 
 ## Matching
 
