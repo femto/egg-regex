@@ -14,17 +14,33 @@ import (
 	"strings"
 )
 
-// Egg's \u{N} as Go's \UNNNNNNNN, so that strconv can read the literals.
-var eggUnicode = regexp.MustCompile(`\\u\{([0-9a-fA-F]+)\}`)
-
+// The line with Egg's \u{N} escapes as Go's \UNNNNNNNN, so that strconv
+// can read the literals. A backslash and the character after it go
+// together, so an escaped backslash before "u{41}" is left alone.
 func goEscapes(line string) string {
-	return eggUnicode.ReplaceAllStringFunc(line, func(m string) string {
-		n, err := strconv.ParseUint(m[3:len(m)-1], 16, 32)
-		if err != nil {
-			panic(m)
+	var b strings.Builder
+	for i := 0; i < len(line); i++ {
+		if line[i] != '\\' || i+1 >= len(line) {
+			b.WriteByte(line[i])
+			continue
 		}
-		return fmt.Sprintf("\\U%08x", n)
-	})
+		if line[i+1] == 'u' && i+2 < len(line) && line[i+2] == '{' {
+			end := strings.IndexByte(line[i:], '}')
+			if end < 0 {
+				panic(line)
+			}
+			n, err := strconv.ParseUint(line[i+3:i+end], 16, 32)
+			if err != nil {
+				panic(line)
+			}
+			fmt.Fprintf(&b, "\\U%08x", n)
+			i += end
+			continue
+		}
+		b.WriteString(line[i : i+2])
+		i++
+	}
+	return b.String()
 }
 
 // The string literals of a line `t(io, a, &n, "pattern", "text")` or

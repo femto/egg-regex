@@ -188,6 +188,8 @@ fn main(io: Io, a: Allocator) void {
     check.t(io, a, &n, "(?i)\\p{Greek}+", "ΑΒΓαβγ")
     check.t(io, a, &n, "(?i)[a-c]+", "ABC")
     check.t(io, a, &n, "(?i)ǅ", "Ǆ ǆ ǅ")
+    // A backslash in the text, then u{41}: not an escape (test/go).
+    check.t(io, a, &n, "u", "\\u{41}")
     // Escapes.
     check.t(io, a, &n, "\\.\\*\\+\\?\\(\\)\\[\\]\\{\\}\\|\\^\\$\\\\", ".*+?()[]{}|^$\\")
     check.t(io, a, &n, "\\x41\\x{42}\\x{65e5}", "ABC AB日")
