@@ -50,7 +50,7 @@ only read once compiled, so threads may share one. Matching takes an
 | `find_at(a, s, start)` | the leftmost match starting at start or later; `^`, `\b` and the like still see the text before start |
 | `captures(a, s, &caps)` | false if no match; else `caps`, a `Buf(?regex.Span)`, holds group 0 (the whole match) and each group, null for one that took no part |
 | `captures_at(a, s, start, &caps)` | the same from start |
-| `next(a, s, &it)` | each match in turn, from `var it = regex.iter()`, then null |
+| `next(a, s, &it)` | each match in turn, from `var it = regex.iter()` (freed with `a.free(it)`), then null |
 | `next_captures(a, s, &it, &caps)` | the same with its groups in caps, then false |
 | `find_all(a, s, &out)` | every match, pushed onto `out: Buf(regex.Span)` |
 | `replace_all(a, &out, s, template)` | s at the end of `out: Buf(u8)` with every match replaced by template, its `$` expanded |
@@ -69,12 +69,15 @@ Perl, RE2, Go and Rust: `a|ab` finds `a` in `ab`, `a*?` the shortest.
 
 ```egg
 var it = regex.iter()
+defer a.free(it)
 while (re.next(a, s, &it)) |m| {
     io.print(s[m.start..m.end])
 }
 ```
 
-`next` goes through the matches as Go's `FindAll` does: each search
+An `Iter` keeps the DFA its searches build (below) from one match to the
+next, so it is freed when done. `next` goes through the matches as Go's
+`FindAll` does: each search
 starts at the end of the last match, or a character past it when that was
 empty, and an empty match right after the last match is skipped, so `a*`
 on `a` is `0..1` alone, not `0..1` and `1..1`. `find_all`, `replace_all`,
@@ -124,19 +127,31 @@ may not be used twice or start with a digit (as in RE2 and Rust).
 ## How
 
 The pattern is parsed to a tree (src/parse.egg) and compiled to a
-program of instructions in Thompson's way (src/prog.egg), which one of two
-engines runs (src/regex.egg), both O(text × pattern) whatever the
-pattern, as in Go:
+program of instructions in Thompson's way (src/prog.egg), which one of
+three engines runs, each O(text × pattern) whatever the pattern, as in
+RE2 and Go:
 
-- a backtracker, when the program's instructions times the text's length
-  is at most 262,144: depth first, with a bit for each (instruction,
-  position) so that none is tried twice. It is the faster on short texts.
-- a Pike VM otherwise: every thread steps over a character together, at
-  most one per instruction, in memory that does not grow with the text.
+- a backtracker (src/regex.egg), when the program's instructions times
+  the text's length is at most 262,144: depth first, with a bit for each
+  (instruction, position) so that none is tried twice. It is the fastest
+  on short texts.
+- a lazy DFA (src/dfa.egg) on longer ones: a state is the set of
+  instructions the NFA's threads are at, made the first time a search
+  reaches it, its transitions filled in as they are taken. It steps on
+  classes of code points, so its semantics are the NFA's. One DFA finds
+  where the leftmost-first match ends, another, over the program
+  backwards, where it starts; groups, when wanted, are then found by the
+  NFA on that span alone. `^`, `$` and `\b` wait in a state for the
+  character that settles them, as in RE2.
+- a Pike VM (src/regex.egg), when a DFA would take more than 4 MB of
+  states (a pattern like `(a|b)*a(a|b){16}`): every thread steps over a
+  character together, in memory that does not grow with the text.
 
-Both skip, while no match is under way, to the next byte a match can
-start with, worked out when compiling (`S` for `Sherlock`, a digit for
-`\d+`). A call allocates once or nearly, for its working memory.
+The backtracker and the DFA skip, while no match is under way, to the
+next byte a match can start with, worked out when compiling (`S` for
+`Sherlock`, a digit for `\d+`). A call allocates once or nearly for the
+NFA; the DFA's states live as long as the `Iter`, or the `find_all`,
+`replace_all` or `split` call, that runs the searches.
 
 `bench/bench.egg` times some cases (`eggc build bench/bench.egg --release
 --pkg regex=src`), and `bench/go/main.go` the same with Go's `regexp`. On
@@ -144,14 +159,14 @@ a 2019 Intel Mac, ms:
 
 | | egg-regex | Go |
 | --- | --- | --- |
-| every `Sherlock` in 1 MB | 9.6 | 5.7 |
-| every `Sherlock\|Watson\|Holmes` | 37.8 | 57.2 |
-| every `\w+@\w+\.com` | 69.5 | 35.7 |
-| every `\d{4}-\d{2}-\d{2}` | 3.7 | 25.7 |
-| every `(?i)sherlock` | 15.0 | 36.5 |
-| `zzz+`, found nowhere | 2.0 | 0.2 |
-| 100,000 `is_match` on short texts | 32.3 | 15.5 |
-| 100,000 `captures` on short texts | 26.1 | 28.0 |
+| every `Sherlock` in 1 MB | 3.7 | 5.9 |
+| every `Sherlock\|Watson\|Holmes` | 9.3 | 58.1 |
+| every `\w+@\w+\.com` | 10.2 | 35.5 |
+| every `\d{4}-\d{2}-\d{2}` | 1.0 | 25.0 |
+| every `(?i)sherlock` | 5.2 | 36.7 |
+| `zzz+`, found nowhere | 0.7 | 0.3 |
+| 100,000 `is_match` on short texts | 38.8 | 15.4 |
+| 100,000 `captures` on short texts | 26.5 | 29.2 |
 
 ## Tests
 
@@ -166,4 +181,6 @@ match, the text with the matches replaced, and its pieces split;
 `regexp` says of the same cases (`go run test/go/main.go`), which CI
 checks again. `test/errors.egg`
 has what is not a pattern, and `test/api.egg` the rest of the API. Every
-case is run by both engines as well, which must agree.
+case is run by every engine as well (the DFA with room and with too little,
+so that it gives up), which must agree; `test/long.egg` checks the API on
+a 60 KB text, where it runs the DFA, against the Pike VM.

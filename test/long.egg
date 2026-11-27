@@ -1,0 +1,123 @@
+// Long texts, where the API runs the lazy DFA (and, for groups, the NFA
+// on the span it finds), against pike going through the same matches
+// itself. A pattern whose DFA would need too many states makes it give
+// up for pike part way. Each line: the matches, the sum of their spans
+// and of their groups, and whether the API and pike agree.
+uses alloc, io
+
+const regex = @import("regex")
+const parse = @import("regex/parse")
+
+// About 60 KB of words, lines, UTF-8, bytes that are not UTF-8, and a
+// run of random a and b.
+fn text(a: Allocator) Buf(u8) {
+    var out: Buf(u8) = .empty
+    const parts = [_]str{ "foo ", "Bar_9 ", "\n", "é", "日本 ", "\xff", "  ", "a.b ", "x@y.com ", "2026-11-27 ", "foofoo ", "_\n\n" }
+    var seed: u64 = 7
+    while (@len(out) < 40000) {
+        seed = seed *% 6364136223846793005 +% 1442695040888963407
+        a.append_str(&out, parts[@as(i64, (seed >> 33) % 12)])
+    }
+    while (@len(out) < 60000) {
+        seed = seed *% 6364136223846793005 +% 1442695040888963407
+        a.push(&out, if ((seed >> 40) % 2 == 0) 'a' else 'b')
+    }
+    a.append_str(&out, " end")
+    return out
+}
+
+// The matches pike finds going on as next does: count, span sum, group
+// sum.
+fn by_pike(a: Allocator, re: regex.Regex, s: []u8) [3]i64 {
+    var sums = [3]i64{ 0, 0, 0 }
+    var m: Buf(i64) = .empty
+    defer a.free(m)
+    const k = 2 * re.ncap
+    var pos = 0
+    var prev = -1
+    while (pos <= @len(s)) {
+        if (!regex.pike(re, a, s, pos, @len(s), k, false, &m)) {
+            break
+        }
+        const start = m[0]
+        const end = m[1]
+        var take = true
+        if (end == pos) {
+            take = start != prev
+            pos = if (pos < @len(s)) pos + parse.decode(s, pos).len else pos + 1
+        } else {
+            pos = end
+        }
+        prev = end
+        if (take) {
+            sums[0] = sums[0] + 1
+            sums[1] = sums[1] + start * 3 + end
+            var g = 2
+            while (g < k) {
+                sums[2] = sums[2] + m[g] * (g + 1)
+                g = g + 1
+            }
+        }
+    }
+    return sums
+}
+
+// The same through the API: next_captures, and find_all for the spans.
+fn by_api(a: Allocator, re: regex.Regex, s: []u8) [3]i64 {
+    var sums = [3]i64{ 0, 0, 0 }
+    var caps: Buf(?regex.Span) = .empty
+    defer a.free(caps)
+    var it = regex.iter()
+    defer a.free(it)
+    while (re.next_captures(a, s, &it, &caps)) {
+        sums[0] = sums[0] + 1
+        var g = 0
+        while (g < @len(caps)) {
+            if (caps[g]) |sp| {
+                if (g == 0) {
+                    sums[1] = sums[1] + sp.start * 3 + sp.end
+                } else {
+                    sums[2] = sums[2] + sp.start * (2 * g + 1) + sp.end * (2 * g + 2)
+                }
+            } else if (g > 0) {
+                sums[2] = sums[2] - (2 * g + 1) - (2 * g + 2)
+            }
+            g = g + 1
+        }
+    }
+    var all: Buf(regex.Span) = .empty
+    defer a.free(all)
+    re.find_all(a, s, &all)
+    var spans = 0
+    for (all) |sp| {
+        spans = spans + sp.start * 3 + sp.end
+    }
+    if (@len(all) != sums[0] or spans != sums[1]) {
+        sums[0] = -1
+    }
+    return sums
+}
+
+fn main(io: Io, a: Allocator) !void {
+    const s = text(a)
+    defer a.free(s)
+    const patterns = [_]str{ "\\w+", "(?m)^\\w+$", "\\bfoo\\b", "(?i)bar_\\d", "[^\\x00-\\x7f]+", ".", "(?s).{3}", "\\d{4}-(\\d\\d)-(\\d\\d)", "(\\w+)@(\\w+)\\.com", "$", "^", "(?m)$", "\\B", "é|日本", "x*", "(foo)+|(Bar)_(\\d)", "a\\.b|a", "(?U)f.*o", "\\s+\\n", "(a|b)*a(a|b){16}", "[ab]{3}b$", "\\xff" }
+    for (patterns) |p| {
+        const re = try regex.compile(a, p)
+        defer a.free(re)
+        const want = by_pike(a, re, s)
+        const got = by_api(a, re, s)
+        io.print(p, ": ", got[0], " ", got[1], " ", got[2], " ", got[0] == want[0] and got[1] == want[1] and got[2] == want[2])
+    }
+    io.print(re_is_match(a, s))
+}
+
+// is_match on the long text, by the DFA, for a pattern that matches and
+// one that does not.
+fn re_is_match(a: Allocator, s: []u8) bool {
+    const yes = regex.compile(a, "x@y\\.com\\s+2026") catch return false
+    defer a.free(yes)
+    const no = regex.compile(a, "x@y\\.com\\s+2027") catch return false
+    defer a.free(no)
+    return yes.is_match(a, s) and !no.is_match(a, s)
+}
