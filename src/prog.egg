@@ -394,3 +394,107 @@ fn sort_ints(inout xs: Buf(i64)) void {
         i = i + 1
     }
 }
+
+// The classes the DFA steps on, from the intervals classes cuts: those
+// that every char and cls instruction of insts treats alike, and whose
+// kind (for ^, $ and \b) is the same, are one class, so that a pattern
+// such as \p{L}, which cuts hundreds of intervals, has a few classes.
+// interval_class[i] is the class of the interval starting at starts[i];
+// reps[c] a code point of class c, and kinds[c] its kind.
+fn merge_classes(a: Allocator, insts: Buf(Inst), ranges: Buf(parse.Range), starts: Buf(i64), inout interval_class: Buf(i64), inout reps: Buf(i64), inout kinds: Buf(i64)) void {
+    var tests: Buf(i64) = .empty
+    defer a.free(tests)
+    var pc = 0
+    while (pc < @len(insts)) {
+        if (insts[pc].op == .char or insts[pc].op == .cls) {
+            a.push(&tests, pc)
+        }
+        pc = pc + 1
+    }
+    const words = @len(tests) / 63 + 1
+    // The signatures of the classes so far, words each, and a hash of
+    // each for a quick look.
+    var sigs: Buf(i64) = .empty
+    defer a.free(sigs)
+    var hashes: Buf(i64) = .empty
+    defer a.free(hashes)
+    var sig = a.alloc(words, @as(i64, 0))
+    defer a.free(sig)
+    for (starts) |cp| {
+        var w = 0
+        while (w < words) {
+            sig[w] = 0
+            w = w + 1
+        }
+        sig[words - 1] = kind_of(cp) << 59
+        var i = 0
+        while (i < @len(tests)) {
+            const ins = insts[tests[i]]
+            if ((ins.op == .char and ins.x == cp) or (ins.op == .cls and in_ranges(ranges, ins.x, ins.y, cp))) {
+                sig[i / 63] = sig[i / 63] | (@as(i64, 1) << (i % 63))
+            }
+            i = i + 1
+        }
+        var h = 0
+        for (sig) |x| {
+            h = (h ^ x) *% 1099511628211
+        }
+        var found = -1
+        var c = 0
+        while (c < @len(reps) and found < 0) {
+            if (hashes[c] == h) {
+                var same = true
+                w = 0
+                while (w < words) {
+                    if (sigs[c * words + w] != sig[w]) {
+                        same = false
+                    }
+                    w = w + 1
+                }
+                if (same) {
+                    found = c
+                }
+            }
+            c = c + 1
+        }
+        if (found < 0) {
+            found = @len(reps)
+            a.push(&reps, cp)
+            a.push(&kinds, kind_of(cp))
+            a.push(&hashes, h)
+            for (sig) |x| {
+                a.push(&sigs, x)
+            }
+        }
+        a.push(&interval_class, found)
+    }
+}
+
+// What a code point is to ^, $ and \b: 1 \n, 2 an ASCII word character,
+// 3 anything else (dfa.egg's NL, WORD, OTHER).
+fn kind_of(cp: i64) i64 {
+    if (cp == 10) {
+        return 1
+    }
+    if ((cp >= 'a' and cp <= 'z') or (cp >= 'A' and cp <= 'Z') or (cp >= '0' and cp <= '9') or cp == '_') {
+        return 2
+    }
+    return 3
+}
+
+// Whether cp is in the sorted ranges[at..at + n].
+fn in_ranges(ranges: Buf(parse.Range), at: i64, n: i64, cp: i64) bool {
+    var lo = at
+    var hi = at + n
+    while (lo < hi) {
+        const mid = lo + (hi - lo) / 2
+        if (cp < ranges[mid].lo) {
+            hi = mid
+        } else if (cp > ranges[mid].hi) {
+            lo = mid + 1
+        } else {
+            return true
+        }
+    }
+    return false
+}

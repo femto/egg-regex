@@ -58,9 +58,10 @@ jobs:
       - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
         with:
           go-version: "1.27"
-      - name: Go agrees with the expected output
+      - name: Go agrees with the expected output and the Unicode tables
         run: |
           go run test/gen/main.go | diff test/random.egg -
           go run test/go/main.go | diff test/match.expected -
           go run test/go/main.go test/random.egg | diff test/random.expected -
           go run test/go/main.go test/replace.egg | diff test/replace.expected -
+          go run tools/unicode/main.go | diff src/unicode.egg -

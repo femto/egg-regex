@@ -338,7 +338,7 @@ fn compute(re: rx.Regex, a: Allocator, insts: Buf(prog.Inst), inout w: Work, ino
         put(a, &w.seeds, &w.nseeds, d.pcs[at + i])
         i = i + 1
     }
-    const ncls = @len(re.class_starts)
+    const ncls = @len(re.class_reps)
     if (col >= ncls) {
         close(a, insts, &w, forward, known, col - ncls)
         var r = FINISH_NONE
@@ -353,7 +353,7 @@ fn compute(re: rx.Regex, a: Allocator, insts: Buf(prog.Inst), inout w: Work, ino
         return r
     }
     const k = re.class_kinds[col]
-    const cp = re.class_starts[col]
+    const cp = re.class_reps[col]
     close(a, insts, &w, forward, known, k)
     w.nnext = 0
     var matched = false
@@ -433,7 +433,7 @@ fn accepts(re: rx.Regex, ins: prog.Inst, cp: i64) bool {
     }
 }
 
-// The class of cp.
+// The class of cp: of the interval it is in.
 fn class_of(re: rx.Regex, cp: i64) i64 {
     if (cp < 128) {
         return re.ascii_class[cp]
@@ -448,7 +448,7 @@ fn class_of(re: rx.Regex, cp: i64) i64 {
             hi = mid
         }
     }
-    return lo
+    return re.interval_class[lo]
 }
 
 // Where the leftmost-first match from start ends, -1 if there is none,
@@ -457,7 +457,7 @@ fn find_end(re: rx.Regex, a: Allocator, inout w: Work, inout d: Dfa, s: []u8, st
     if (d.full) {
         return FULL
     }
-    const ncls = @len(re.class_starts)
+    const ncls = @len(re.class_reps)
     const width = ncls + 4
     var st = begin(re, a, re.insts, &w, &d, true, kind_before(s, start), !re.anchored, width)
     var last = -1
@@ -516,7 +516,7 @@ fn find_start(re: rx.Regex, a: Allocator, inout w: Work, inout d: Dfa, s: []u8, 
     if (d.full) {
         return FULL
     }
-    const ncls = @len(re.class_starts)
+    const ncls = @len(re.class_reps)
     const width = ncls + 4
     var st = begin(re, a, re.rev, &w, &d, false, kind_after(s, end), false, width)
     var first = -1

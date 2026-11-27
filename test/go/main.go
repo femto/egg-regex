@@ -14,6 +14,19 @@ import (
 	"strings"
 )
 
+// Egg's \u{N} as Go's \UNNNNNNNN, so that strconv can read the literals.
+var eggUnicode = regexp.MustCompile(`\\u\{([0-9a-fA-F]+)\}`)
+
+func goEscapes(line string) string {
+	return eggUnicode.ReplaceAllStringFunc(line, func(m string) string {
+		n, err := strconv.ParseUint(m[3:len(m)-1], 16, 32)
+		if err != nil {
+			panic(m)
+		}
+		return fmt.Sprintf("\\U%08x", n)
+	})
+}
+
 // The string literals of a line `t(io, a, &n, "pattern", "text")` or
 // `r(io, a, &n, "pattern", "text", "template")`, and which it is.
 func literals(line string) (string, []string) {
@@ -73,7 +86,7 @@ func main() {
 	sc := bufio.NewScanner(f)
 	n := 0
 	for sc.Scan() {
-		kind, args := literals(sc.Text())
+		kind, args := literals(goEscapes(sc.Text()))
 		if kind == "" {
 			continue
 		}

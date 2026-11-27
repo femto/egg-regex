@@ -51,10 +51,13 @@ const Regex = struct {
     skip: bool
     first: [256]bool
     // For the DFA (dfa.egg): the program backwards, and the classes of
-    // code points it steps on: where each starts, its kind for ^, $ and
-    // \b, and the class of each ASCII code point.
+    // code points it steps on (prog.merge_classes): the intervals of
+    // code points and the class of each, a code point of each class and
+    // its kind for ^, $ and \b, and the class of each ASCII code point.
     rev: Buf(prog.Inst)
     class_starts: Buf(i64)
+    interval_class: Buf(i64)
+    class_reps: Buf(i64)
     class_kinds: Buf(i64)
     ascii_class: [128]i64
 
@@ -297,21 +300,21 @@ fn compile_where(a: Allocator, pattern: []u8, inout at: i64) !Regex {
     }
     var starts: Buf(i64) = .empty
     prog.classes(a, insts, t.ranges, &starts)
+    var interval_class: Buf(i64) = .empty
+    var reps: Buf(i64) = .empty
     var kinds: Buf(i64) = .empty
-    for (starts) |cp| {
-        a.push(&kinds, dfa.kind(cp))
-    }
+    prog.merge_classes(a, insts, t.ranges, starts, &interval_class, &reps, &kinds)
     var ascii: [128]i64 = @splat(0)
     var c = 0
-    var cls = 0
+    var interval = 0
     while (c < 128) {
-        while (cls + 1 < @len(starts) and starts[cls + 1] <= c) {
-            cls = cls + 1
+        while (interval + 1 < @len(starts) and starts[interval + 1] <= c) {
+            interval = interval + 1
         }
-        ascii[c] = cls
+        ascii[c] = interval_class[interval]
         c = c + 1
     }
-    const re = Regex{ .insts = insts, .ranges = @take(&t.ranges), .names = @take(&t.names), .groups = @take(&t.groups), .ncap = t.ncap, .anchored = anchored, .empty_pattern = @len(pattern) == 0, .skip = skip, .first = first, .rev = rev, .class_starts = starts, .class_kinds = kinds, .ascii_class = ascii }
+    const re = Regex{ .insts = insts, .ranges = @take(&t.ranges), .names = @take(&t.names), .groups = @take(&t.groups), .ncap = t.ncap, .anchored = anchored, .empty_pattern = @len(pattern) == 0, .skip = skip, .first = first, .rev = rev, .class_starts = starts, .interval_class = interval_class, .class_reps = reps, .class_kinds = kinds, .ascii_class = ascii }
     a.free(t)
     return re
 }
