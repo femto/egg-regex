@@ -1,0 +1,763 @@
+// The parser of regex: a pattern to a tree of nodes, kept flat in
+// buffers, where a node names its children by index. The syntax is
+// RE2's, without what needs backtracking (back-references, lookaround);
+// README has it. An error is an error.Name, and `at` is left at the byte
+// offset where the pattern goes wrong.
+uses alloc
+
+// The largest count in {n,m}, as RE2 has it.
+const MAX_REPEAT = 1000
+// How deep groups may nest, so that parsing and compiling, which recur
+// on the tree, stay well inside the stack.
+const MAX_DEPTH = 1000
+// The largest code point.
+const MAX_CP = 1114111
+
+const Kind = enum { empty, lit, cls, any, any_nl, begin_line, end_line, begin_text, end_text, word, not_word, cat, alt, rep, group }
+
+// lit: a is the code point. cls: ranges[a..a + b]. cat, alt: kids[a..a +
+// b]. rep: a is the node repeated, b..c the counts (c is -1 for no
+// limit), greedy whether it takes as many as it can first. group: a is
+// the node inside, b the group's number.
+const Node = struct {
+    kind: Kind
+    a: i64
+    b: i64
+    c: i64
+    greedy: bool
+}
+
+// Code points lo to hi, both included.
+const Range = struct {
+    lo: i64
+    hi: i64
+}
+
+// A named group: its name is names[at..at + len].
+const Group = struct {
+    at: i64
+    len: i64
+    index: i64
+}
+
+const Ast = struct {
+    nodes: Buf(Node)
+    kids: Buf(i64)
+    ranges: Buf(Range)
+    names: Buf(u8)
+    groups: Buf(Group)
+    // Groups, counting the whole match as group 0.
+    ncap: i64
+    root: i64
+}
+
+// (?i) case-insensitive (ASCII letters), (?m) ^ and $ at lines, (?s) .
+// matches \n too, (?U) repetitions lazy unless marked ? (and the other way
+// round).
+const Flags = struct {
+    fold: bool
+    multi: bool
+    dot_nl: bool
+    lazy: bool
+}
+
+// A code point decoded from UTF-8, and its length in bytes. A byte that
+// does not start valid UTF-8 is U+FFFD of length 1, and ok is false.
+const Rune = struct {
+    cp: i64
+    len: i64
+    ok: bool
+}
+
+fn decode(s: []u8, i: i64) Rune {
+    const b0 = @as(i64, s[i])
+    if (b0 < 128) {
+        return Rune{ .cp = b0, .len = 1, .ok = true }
+    }
+    const bad = Rune{ .cp = 65533, .len = 1, .ok = false }
+    var n = 0
+    var cp = 0
+    var min = 0
+    if (b0 >= 194 and b0 <= 223) {
+        n = 1
+        cp = b0 & 31
+        min = 128
+    } else if (b0 >= 224 and b0 <= 239) {
+        n = 2
+        cp = b0 & 15
+        min = 2048
+    } else if (b0 >= 240 and b0 <= 244) {
+        n = 3
+        cp = b0 & 7
+        min = 65536
+    } else {
+        return bad
+    }
+    if (i + n >= @len(s)) {
+        return bad
+    }
+    var k = 1
+    while (k <= n) {
+        const b = @as(i64, s[i + k])
+        if ((b & 192) != 128) {
+            return bad
+        }
+        cp = (cp << 6) | (b & 63)
+        k = k + 1
+    }
+    if (cp < min or cp > MAX_CP or (cp >= 55296 and cp <= 57343)) {
+        return bad
+    }
+    return Rune{ .cp = cp, .len = n + 1, .ok = true }
+}
+
+fn parse(a: Allocator, s: []u8, inout at: i64) !Ast {
+    var t = Ast{ .nodes = .empty, .kids = .empty, .ranges = .empty, .names = .empty, .groups = .empty, .ncap = 1, .root = 0 }
+    errdefer a.free(t)
+    var flags = Flags{ .fold = false, .multi = false, .dot_nl = false, .lazy = false }
+    at = 0
+    t.root = try alt(a, s, &t, &at, &flags, 0)
+    if (at < @len(s)) {
+        // alt stops only at the end or at a ')' no '(' opened.
+        return error.UnopenedParen
+    }
+    return t
+}
+
+fn add(a: Allocator, inout t: Ast, kind: Kind, x: i64, y: i64) i64 {
+    a.push(&t.nodes, Node{ .kind = kind, .a = x, .b = y, .c = 0, .greedy = true })
+    return @len(t.nodes) - 1
+}
+
+// A cat or an alt of items, or the one item alone.
+fn list(a: Allocator, inout t: Ast, kind: Kind, items: Buf(i64)) i64 {
+    if (@len(items) == 1) {
+        return items[0]
+    }
+    const start = @len(t.kids)
+    for (items) |n| {
+        a.push(&t.kids, n)
+    }
+    return add(a, &t, kind, start, @len(items))
+}
+
+// Alternatives, up to the end or a ')'.
+fn alt(a: Allocator, s: []u8, inout t: Ast, inout at: i64, inout flags: Flags, depth: i64) !i64 {
+    if (depth > MAX_DEPTH) {
+        return error.TooDeep
+    }
+    var items: Buf(i64) = .empty
+    defer a.free(items)
+    const first = try concat(a, s, &t, &at, &flags, depth)
+    a.push(&items, first)
+    while (at < @len(s) and s[at] == '|') {
+        at = at + 1
+        const next = try concat(a, s, &t, &at, &flags, depth)
+        a.push(&items, next)
+    }
+    return list(a, &t, .alt, items)
+}
+
+// What one alternative is: a run of items, each maybe repeated.
+fn concat(a: Allocator, s: []u8, inout t: Ast, inout at: i64, inout flags: Flags, depth: i64) !i64 {
+    var items: Buf(i64) = .empty
+    defer a.free(items)
+    // Whether the last item came from a repetition, which may not be
+    // repeated again (a**); a group around it may ((a*)*).
+    var repeated = false
+    while (at < @len(s) and s[at] != '|' and s[at] != ')') {
+        const c = s[at]
+        var min = -1
+        var max = -1
+        var end = at + 1
+        if (c == '*') {
+            min = 0
+        } else if (c == '+') {
+            min = 1
+        } else if (c == '?') {
+            min = 0
+            max = 1
+        } else if (c == '{') {
+            if (braces(s, at)) |r| {
+                min = r.lo
+                max = r.hi
+                end = r.end
+            }
+        }
+        if (min < 0) {
+            const item = try atom(a, s, &t, &at, &flags, depth)
+            if (item >= 0) {
+                a.push(&items, item)
+                repeated = false
+            }
+            continue
+        }
+        if (@len(items) == 0) {
+            return error.NothingToRepeat
+        }
+        if (repeated) {
+            return error.NestedRepeat
+        }
+        if (min > MAX_REPEAT or max > MAX_REPEAT) {
+            return error.RepeatTooBig
+        }
+        if (max >= 0 and max < min) {
+            return error.BadRepeat
+        }
+        var greedy = !flags.lazy
+        if (end < @len(s) and s[end] == '?') {
+            greedy = !greedy
+            end = end + 1
+        }
+        const last = @len(items) - 1
+        a.push(&t.nodes, Node{ .kind = .rep, .a = items[last], .b = min, .c = max, .greedy = greedy })
+        items[last] = @len(t.nodes) - 1
+        repeated = true
+        at = end
+    }
+    if (@len(items) == 0) {
+        return add(a, &t, .empty, 0, 0)
+    }
+    return list(a, &t, .cat, items)
+}
+
+// {n}, {n,} or {n,m} at s[at]: the counts (hi -1 for none) and where it
+// ends; null if it is not one, and then the '{' is itself (as in RE2).
+fn braces(s: []u8, at: i64) ?Brace {
+    var i = at + 1
+    const lo = number(s, &i) orelse return null
+    var hi = lo
+    if (i < @len(s) and s[i] == ',') {
+        i = i + 1
+        hi = -1
+        if (i < @len(s) and s[i] != '}') {
+            hi = number(s, &i) orelse return null
+        }
+    }
+    if (i >= @len(s) or s[i] != '}') {
+        return null
+    }
+    return Brace{ .lo = lo, .hi = hi, .end = i + 1 }
+}
+
+const Brace = struct {
+    lo: i64
+    hi: i64
+    end: i64
+}
+
+// Decimal digits at s[i], moving i past them; null if there are none.
+// Values past MAX_REPEAT stop growing, which is enough to reject them.
+fn number(s: []u8, inout i: i64) ?i64 {
+    const start = i
+    var n = 0
+    while (i < @len(s) and s[i] >= '0' and s[i] <= '9') {
+        if (n <= MAX_REPEAT) {
+            n = n * 10 + @as(i64, s[i] - '0')
+        }
+        i = i + 1
+    }
+    if (i == start) {
+        return null
+    }
+    return n
+}
+
+// One item: its node, or -1 for a group of flags only, (?i), which
+// changes flags and matches nothing.
+fn atom(a: Allocator, s: []u8, inout t: Ast, inout at: i64, inout flags: Flags, depth: i64) !i64 {
+    const c = s[at]
+    if (c == '(') {
+        return group(a, s, &t, &at, &flags, depth)
+    }
+    if (c == '[') {
+        return class(a, s, &t, &at, flags)
+    }
+    if (c == '.') {
+        at = at + 1
+        return add(a, &t, if (flags.dot_nl) .any_nl else .any, 0, 0)
+    }
+    if (c == '^') {
+        at = at + 1
+        return add(a, &t, if (flags.multi) .begin_line else .begin_text, 0, 0)
+    }
+    if (c == '$') {
+        at = at + 1
+        return add(a, &t, if (flags.multi) .end_line else .end_text, 0, 0)
+    }
+    if (c == '\\') {
+        return escape(a, s, &t, &at, flags)
+    }
+    const r = decode(s, at)
+    if (!r.ok) {
+        return error.BadUtf8
+    }
+    at = at + r.len
+    return literal(a, &t, r.cp, flags)
+}
+
+// The code point cp, or both cases of an ASCII letter under (?i).
+fn literal(a: Allocator, inout t: Ast, cp: i64, flags: Flags) i64 {
+    if (flags.fold and is_letter(cp)) {
+        const lower = cp | 32
+        const start = @len(t.ranges)
+        a.push(&t.ranges, Range{ .lo = lower - 32, .hi = lower - 32 })
+        a.push(&t.ranges, Range{ .lo = lower, .hi = lower })
+        return add(a, &t, .cls, start, 2)
+    }
+    return add(a, &t, .lit, cp, 0)
+}
+
+fn is_letter(cp: i64) bool {
+    return (cp >= 'A' and cp <= 'Z') or (cp >= 'a' and cp <= 'z')
+}
+
+// (re), (?:re), (?P<name>re), (?<name>re), (?flags) and (?flags:re);
+// -1 for (?flags).
+fn group(a: Allocator, s: []u8, inout t: Ast, inout at: i64, inout flags: Flags, depth: i64) !i64 {
+    const open = at
+    at = at + 1
+    var index = -1
+    var inner = flags
+    if (at < @len(s) and s[at] == '?') {
+        at = at + 1
+        if (at + 1 < @len(s) and s[at] == '<' and (s[at + 1] == '=' or s[at + 1] == '!')) {
+            // Lookbehind.
+            return error.BadGroup
+        }
+        if (at < @len(s) and (s[at] == '<' or (s[at] == 'P' and at + 1 < @len(s) and s[at + 1] == '<'))) {
+            at = at + (if (s[at] == 'P') 2 else 1)
+            const name_start = at
+            while (at < @len(s) and is_name_byte(s[at])) {
+                at = at + 1
+            }
+            if (at >= @len(s) or s[at] != '>' or at == name_start or (s[name_start] >= '0' and s[name_start] <= '9')) {
+                at = open
+                return error.BadGroupName
+            }
+            const name = s[name_start..at]
+            for (t.groups) |g| {
+                if (t.names[g.at..g.at + g.len] == name) {
+                    at = open
+                    return error.DuplicateGroupName
+                }
+            }
+            index = t.ncap
+            a.push(&t.groups, Group{ .at = @len(t.names), .len = @len(name), .index = index })
+            a.append_str(&t.names, name)
+            t.ncap = t.ncap + 1
+            at = at + 1
+        } else {
+            // Flags, then ')' (for the rest of the enclosing group) or ':'
+            // (for this group only).
+            var on = true
+            while (at < @len(s) and s[at] != ')' and s[at] != ':') {
+                const f = s[at]
+                if (f == '-' and on) {
+                    on = false
+                } else if (f == 'i') {
+                    inner.fold = on
+                } else if (f == 'm') {
+                    inner.multi = on
+                } else if (f == 's') {
+                    inner.dot_nl = on
+                } else if (f == 'U') {
+                    inner.lazy = on
+                } else if (is_letter(@as(i64, f))) {
+                    return error.BadFlags
+                } else {
+                    // Lookahead ((?=, (?!), atomic groups and the like.
+                    return error.BadGroup
+                }
+                at = at + 1
+            }
+            if (at >= @len(s)) {
+                at = open
+                return error.MissingParen
+            }
+            if (!on and s[at - 1] == '-') {
+                return error.BadFlags
+            }
+            if (s[at] == ')') {
+                // Flags for the rest of the group, and no item (-1).
+                flags = inner
+                at = at + 1
+                return -1
+            }
+            at = at + 1
+        }
+    } else {
+        index = t.ncap
+        t.ncap = t.ncap + 1
+    }
+    const body = try alt(a, s, &t, &at, &inner, depth + 1)
+    if (at >= @len(s)) {
+        at = open
+        return error.MissingParen
+    }
+    at = at + 1
+    if (index < 0) {
+        return body
+    }
+    return add(a, &t, .group, body, index)
+}
+
+fn is_name_byte(c: u8) bool {
+    return (c >= 'a' and c <= 'z') or (c >= 'A' and c <= 'Z') or (c >= '0' and c <= '9') or c == '_'
+}
+
+// A backslash outside a class.
+fn escape(a: Allocator, s: []u8, inout t: Ast, inout at: i64, flags: Flags) !i64 {
+    if (at + 1 >= @len(s)) {
+        return error.TrailingBackslash
+    }
+    const c = s[at + 1]
+    if (c == 'd' or c == 'D' or c == 'w' or c == 'W' or c == 's' or c == 'S') {
+        var rs: Buf(Range) = .empty
+        defer a.free(rs)
+        perl(a, &rs, c)
+        at = at + 2
+        return ranges_node(a, &t, &rs, false, false)
+    }
+    var look = Kind.empty
+    if (c == 'b') {
+        look = .word
+    } else if (c == 'B') {
+        look = .not_word
+    } else if (c == 'A') {
+        look = .begin_text
+    } else if (c == 'z') {
+        look = .end_text
+    }
+    if (look != .empty) {
+        at = at + 2
+        return add(a, &t, look, 0, 0)
+    }
+    const cp = try escape_char(s, &at)
+    return literal(a, &t, cp, flags)
+}
+
+// The code point a backslash at s[at] stands for, moving at past it:
+// \n \t \r \f \v \a, \xHH, \x{H...}, and any other ASCII byte but a
+// letter or digit as itself (as in RE2 and Go: \. \_ \ ).
+fn escape_char(s: []u8, inout at: i64) !i64 {
+    if (at + 1 >= @len(s)) {
+        return error.TrailingBackslash
+    }
+    const c = s[at + 1]
+    at = at + 2
+    if (c == 'n') {
+        return 10
+    } else if (c == 't') {
+        return 9
+    } else if (c == 'r') {
+        return 13
+    } else if (c == 'f') {
+        return 12
+    } else if (c == 'v') {
+        return 11
+    } else if (c == 'a') {
+        return 7
+    } else if (c == 'x') {
+        return hex_escape(s, &at)
+    } else if (c < 128 and !is_letter(@as(i64, c)) and !(c >= '0' and c <= '9')) {
+        return @as(i64, c)
+    }
+    at = at - 2
+    return error.BadEscape
+}
+
+// After \x: two hex digits, or 1 or more in braces, up to U+10FFFF.
+fn hex_escape(s: []u8, inout at: i64) !i64 {
+    const start = at - 2
+    var n = 0
+    if (at < @len(s) and s[at] == '{') {
+        at = at + 1
+        var digits = 0
+        while (at < @len(s) and s[at] != '}') {
+            const d = hex(s[at])
+            if (d < 0) {
+                at = start
+                return error.BadEscape
+            }
+            n = n * 16 + d
+            if (n > MAX_CP) {
+                at = start
+                return error.BadEscape
+            }
+            digits = digits + 1
+            at = at + 1
+        }
+        if (at >= @len(s) or digits == 0) {
+            at = start
+            return error.BadEscape
+        }
+        at = at + 1
+        return n
+    }
+    var k = 0
+    while (k < 2) {
+        const d = if (at < @len(s)) hex(s[at]) else -1
+        if (d < 0) {
+            at = start
+            return error.BadEscape
+        }
+        n = n * 16 + d
+        at = at + 1
+        k = k + 1
+    }
+    return n
+}
+
+fn hex(c: u8) i64 {
+    if (c >= '0' and c <= '9') {
+        return @as(i64, c - '0')
+    }
+    if (c >= 'a' and c <= 'f') {
+        return @as(i64, c - 'a') + 10
+    }
+    if (c >= 'A' and c <= 'F') {
+        return @as(i64, c - 'A') + 10
+    }
+    return -1
+}
+
+// \d \w \s and their negations \D \W \S, ASCII as in RE2.
+fn perl(a: Allocator, inout rs: Buf(Range), c: u8) void {
+    var set: Buf(Range) = .empty
+    defer a.free(set)
+    const lower = c | 32
+    if (lower == 'd') {
+        a.push(&set, Range{ .lo = '0', .hi = '9' })
+    } else if (lower == 'w') {
+        a.push(&set, Range{ .lo = '0', .hi = '9' })
+        a.push(&set, Range{ .lo = 'A', .hi = 'Z' })
+        a.push(&set, Range{ .lo = '_', .hi = '_' })
+        a.push(&set, Range{ .lo = 'a', .hi = 'z' })
+    } else {
+        a.push(&set, Range{ .lo = 9, .hi = 10 })
+        a.push(&set, Range{ .lo = 12, .hi = 13 })
+        a.push(&set, Range{ .lo = 32, .hi = 32 })
+    }
+    if (c != lower) {
+        negate(a, &set)
+    }
+    for (set) |r| {
+        a.push(&rs, r)
+    }
+}
+
+// [...] and [^...].
+fn class(a: Allocator, s: []u8, inout t: Ast, inout at: i64, flags: Flags) !i64 {
+    const open = at
+    at = at + 1
+    var neg = false
+    if (at < @len(s) and s[at] == '^') {
+        neg = true
+        at = at + 1
+    }
+    var rs: Buf(Range) = .empty
+    defer a.free(rs)
+    var first = true
+    while (true) {
+        if (at >= @len(s)) {
+            at = open
+            return error.MissingBracket
+        }
+        const c = s[at]
+        if (c == ']' and !first) {
+            at = at + 1
+            break
+        }
+        first = false
+        if (c == '[' and at + 1 < @len(s) and s[at + 1] == ':') {
+            if (try posix(a, s, &at, &rs)) {
+                continue
+            }
+        }
+        if (c == '\\' and at + 1 < @len(s)) {
+            const e = s[at + 1]
+            if (e == 'd' or e == 'D' or e == 'w' or e == 'W' or e == 's' or e == 'S') {
+                perl(a, &rs, e)
+                at = at + 2
+                continue
+            }
+        }
+        const lo = try class_char(s, &at)
+        var hi = lo
+        if (at + 1 < @len(s) and s[at] == '-' and s[at + 1] != ']') {
+            const dash = at
+            at = at + 1
+            hi = try class_char(s, &at)
+            if (hi < lo) {
+                at = dash - 1
+                return error.BadRange
+            }
+        }
+        a.push(&rs, Range{ .lo = lo, .hi = hi })
+    }
+    return ranges_node(a, &t, &rs, flags.fold, neg)
+}
+
+// One character in a class: a code point, or an escape for one.
+fn class_char(s: []u8, inout at: i64) !i64 {
+    if (s[at] == '\\') {
+        return escape_char(s, &at)
+    }
+    const r = decode(s, at)
+    if (!r.ok) {
+        return error.BadUtf8
+    }
+    at = at + r.len
+    return r.cp
+}
+
+// [:name:] or [:^name:] at s[at], adding its ranges and moving at past it;
+// false (at unmoved) if no ":]" closes it, so that it is a '[' and more.
+fn posix(a: Allocator, s: []u8, inout at: i64, inout rs: Buf(Range)) !bool {
+    var i = at + 2
+    var neg = false
+    if (i < @len(s) and s[i] == '^') {
+        neg = true
+        i = i + 1
+    }
+    const start = i
+    while (i < @len(s) and s[i] >= 'a' and s[i] <= 'z') {
+        i = i + 1
+    }
+    if (i + 1 >= @len(s) or s[i] != ':' or s[i + 1] != ']') {
+        return false
+    }
+    const name = s[start..i]
+    var set: Buf(Range) = .empty
+    defer a.free(set)
+    if (name == "alnum") {
+        a.push(&set, Range{ .lo = '0', .hi = '9' })
+        a.push(&set, Range{ .lo = 'A', .hi = 'Z' })
+        a.push(&set, Range{ .lo = 'a', .hi = 'z' })
+    } else if (name == "alpha") {
+        a.push(&set, Range{ .lo = 'A', .hi = 'Z' })
+        a.push(&set, Range{ .lo = 'a', .hi = 'z' })
+    } else if (name == "ascii") {
+        a.push(&set, Range{ .lo = 0, .hi = 127 })
+    } else if (name == "blank") {
+        a.push(&set, Range{ .lo = 9, .hi = 9 })
+        a.push(&set, Range{ .lo = 32, .hi = 32 })
+    } else if (name == "cntrl") {
+        a.push(&set, Range{ .lo = 0, .hi = 31 })
+        a.push(&set, Range{ .lo = 127, .hi = 127 })
+    } else if (name == "digit") {
+        a.push(&set, Range{ .lo = '0', .hi = '9' })
+    } else if (name == "graph") {
+        a.push(&set, Range{ .lo = 33, .hi = 126 })
+    } else if (name == "lower") {
+        a.push(&set, Range{ .lo = 'a', .hi = 'z' })
+    } else if (name == "print") {
+        a.push(&set, Range{ .lo = 32, .hi = 126 })
+    } else if (name == "punct") {
+        a.push(&set, Range{ .lo = 33, .hi = 47 })
+        a.push(&set, Range{ .lo = 58, .hi = 64 })
+        a.push(&set, Range{ .lo = 91, .hi = 96 })
+        a.push(&set, Range{ .lo = 123, .hi = 126 })
+    } else if (name == "space") {
+        a.push(&set, Range{ .lo = 9, .hi = 13 })
+        a.push(&set, Range{ .lo = 32, .hi = 32 })
+    } else if (name == "upper") {
+        a.push(&set, Range{ .lo = 'A', .hi = 'Z' })
+    } else if (name == "word") {
+        a.push(&set, Range{ .lo = '0', .hi = '9' })
+        a.push(&set, Range{ .lo = 'A', .hi = 'Z' })
+        a.push(&set, Range{ .lo = '_', .hi = '_' })
+        a.push(&set, Range{ .lo = 'a', .hi = 'z' })
+    } else if (name == "xdigit") {
+        a.push(&set, Range{ .lo = '0', .hi = '9' })
+        a.push(&set, Range{ .lo = 'A', .hi = 'F' })
+        a.push(&set, Range{ .lo = 'a', .hi = 'f' })
+    } else {
+        return error.BadClass
+    }
+    if (neg) {
+        negate(a, &set)
+    }
+    for (set) |r| {
+        a.push(&rs, r)
+    }
+    at = i + 2
+    return true
+}
+
+// A class node of rs: with (?i) the other case of each ASCII letter too,
+// sorted and merged, then negated if neg.
+fn ranges_node(a: Allocator, inout t: Ast, inout rs: Buf(Range), fold: bool, neg: bool) i64 {
+    if (fold) {
+        const n = @len(rs)
+        var i = 0
+        while (i < n) {
+            const r = rs[i]
+            const ulo = if (r.lo > 'A') r.lo else 'A'
+            const uhi = if (r.hi < 'Z') r.hi else 'Z'
+            if (ulo <= uhi) {
+                a.push(&rs, Range{ .lo = ulo + 32, .hi = uhi + 32 })
+            }
+            const llo = if (r.lo > 'a') r.lo else 'a'
+            const lhi = if (r.hi < 'z') r.hi else 'z'
+            if (llo <= lhi) {
+                a.push(&rs, Range{ .lo = llo - 32, .hi = lhi - 32 })
+            }
+            i = i + 1
+        }
+    }
+    normalize(a, &rs)
+    if (neg) {
+        negate(a, &rs)
+    }
+    const start = @len(t.ranges)
+    for (rs) |r| {
+        a.push(&t.ranges, r)
+    }
+    return add(a, &t, .cls, start, @len(rs))
+}
+
+// Sorted by lo, with ranges that overlap or touch made one.
+fn normalize(a: Allocator, inout rs: Buf(Range)) void {
+    var i = 1
+    while (i < @len(rs)) {
+        var j = i
+        while (j > 0 and rs[j - 1].lo > rs[j].lo) {
+            @swap(&rs, j - 1, j)
+            j = j - 1
+        }
+        i = i + 1
+    }
+    var out: Buf(Range) = .empty
+    for (rs) |r| {
+        const n = @len(out)
+        if (n > 0 and r.lo <= out[n - 1].hi + 1) {
+            if (r.hi > out[n - 1].hi) {
+                out[n - 1].hi = r.hi
+            }
+        } else {
+            a.push(&out, r)
+        }
+    }
+    const old = @replace(&rs, out)
+    a.free(old)
+}
+
+// Every code point not in the sorted, merged rs.
+fn negate(a: Allocator, inout rs: Buf(Range)) void {
+    normalize(a, &rs)
+    var out: Buf(Range) = .empty
+    var next = 0
+    for (rs) |r| {
+        if (r.lo > next) {
+            a.push(&out, Range{ .lo = next, .hi = r.lo - 1 })
+        }
+        next = r.hi + 1
+    }
+    if (next <= MAX_CP) {
+        a.push(&out, Range{ .lo = next, .hi = MAX_CP })
+    }
+    const old = @replace(&rs, out)
+    a.free(old)
+}

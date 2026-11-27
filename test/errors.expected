@@ -1,0 +1,48 @@
+a(b -> MissingParen at 1
+a(b(c) -> MissingParen at 1
+ab) -> UnopenedParen at 2
+a[bc -> MissingBracket at 1
+[] -> MissingBracket at 0
+x[z-a] -> BadRange at 2
+*a -> NothingToRepeat at 0
+a|+ -> NothingToRepeat at 2
+(?)+ -> NothingToRepeat at 3
+(?i)* -> NothingToRepeat at 4
+(?<!a) -> BadGroup at 2
+(?>a) -> BadGroup at 2
+(?#c) -> BadGroup at 2
+a** -> NestedRepeat at 2
+a{2}* -> NestedRepeat at 4
+a{1001} -> RepeatTooBig at 1
+a{2,1001} -> RepeatTooBig at 1
+a{3,2} -> BadRepeat at 1
+ab\ -> TrailingBackslash at 2
+a\q -> BadEscape at 1
+\1 -> BadEscape at 0
+[\q] -> BadEscape at 1
+(?=a) -> BadGroup at 2
+(?!a) -> BadGroup at 2
+(?<=a) -> BadGroup at 2
+(?x) -> BadFlags at 2
+(?i-) -> BadFlags at 4
+(?i -> MissingParen at 0
+(?<n>a)(?<n>b) -> DuplicateGroupName at 7
+(?P<1x>a) -> BadGroupName at 0
+(?<>a) -> BadGroupName at 0
+(?<a-b>c) -> BadGroupName at 0
+[[:nope:]] -> BadClass at 1
+\x{110000} -> BadEscape at 0
+\x{} -> BadEscape at 0
+\xg0 -> BadEscape at 0
+\x4 -> BadEscape at 0
+a\xffb -> BadUtf8 at 1
+((((((((((a)))))))))) -> ok
+(?:a{1000}){1000} -> TooBig at 17
+a{ -> ok
+a{,2} -> ok
+[]a] -> ok
+[a-] -> ok
+(?i) -> ok
+(?) -> ok
+\_\ \# -> ok
+(?<Year_2>\d+) -> ok

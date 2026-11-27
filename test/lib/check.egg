@@ -1,0 +1,67 @@
+// The check that test/match.egg and test/random.egg make of each case:
+// the groups of the leftmost match, whether it matches at all, and every
+// match in turn (find_at from the end of the one before, as Go's FindAll
+// goes on), printed as test/go prints what Go's regexp finds.
+uses alloc, io
+
+const regex = @import("regex")
+const parse = @import("regex/parse")
+
+fn spans(a: Allocator, inout out: Buf(u8), caps: Buf(?regex.Span)) void {
+    for (caps) |c| {
+        if (c) |sp| {
+            a.append_str(&out, "(")
+            a.append_int(&out, sp.start)
+            a.append_str(&out, ",")
+            a.append_int(&out, sp.end)
+            a.append_str(&out, ")")
+        } else {
+            a.append_str(&out, "(-)")
+        }
+    }
+}
+
+fn t(io: Io, a: Allocator, inout count: i64, pattern: []u8, s: []u8) void {
+    count = count + 1
+    const n = count
+    const re = regex.compile(a, pattern) catch {
+        io.print(n, ": error")
+        return
+    }
+    defer a.free(re)
+    var out: Buf(u8) = .empty
+    defer a.free(out)
+    var caps: Buf(?regex.Span) = .empty
+    defer a.free(caps)
+    if (!re.captures(a, s, &caps)) {
+        io.print(n, ": no ", re.is_match(a, s))
+        return
+    }
+    spans(a, &out, caps)
+    a.append_str(&out, " ")
+    a.append_str(&out, if (re.is_match(a, s)) "true" else "false")
+    a.append_str(&out, " all")
+    var pos = 0
+    var prev = -1
+    while (pos <= @len(s)) {
+        const m = re.find_at(a, s, pos) orelse break
+        var take = true
+        if (m.end == pos) {
+            // Empty: not right after another match, and on by a character.
+            if (m.start == prev) {
+                take = false
+            }
+            pos = if (pos < @len(s)) pos + parse.decode(s, pos).len else pos + 1
+        } else {
+            pos = m.end
+        }
+        prev = m.end
+        if (take) {
+            a.append_str(&out, " ")
+            a.append_int(&out, m.start)
+            a.append_str(&out, "-")
+            a.append_int(&out, m.end)
+        }
+    }
+    io.print(n, ": ", out)
+}

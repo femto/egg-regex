@@ -1,0 +1,81 @@
+// What is not a pattern: the error and the byte offset compile_where
+// gives for it. Two differ from Go on purpose, following RE2 and Rust: a
+// group name may not be used twice, nor start with a digit.
+uses alloc, io
+
+const regex = @import("regex")
+
+fn bad(io: Io, a: Allocator, pattern: []u8) void {
+    // The pattern as written, bytes past ASCII as \xNN.
+    var shown: Buf(u8) = .empty
+    defer a.free(shown)
+    for (pattern) |c| {
+        if (c < 128) {
+            a.push(&shown, c)
+        } else {
+            a.append_str(&shown, "\\x")
+            a.push(&shown, "0123456789abcdef"[@as(i64, c >> 4)])
+            a.push(&shown, "0123456789abcdef"[@as(i64, c & 15)])
+        }
+    }
+    var at = -1
+    const re = regex.compile_where(a, pattern, &at) catch |e| {
+        io.print(shown, " -> ", @errorName(e), " at ", at)
+        return
+    }
+    a.free(re)
+    io.print(shown, " -> ok")
+}
+
+fn main(io: Io, a: Allocator) void {
+    bad(io, a, "a(b")
+    bad(io, a, "a(b(c)")
+    bad(io, a, "ab)")
+    bad(io, a, "a[bc")
+    bad(io, a, "[]")
+    bad(io, a, "x[z-a]")
+    bad(io, a, "*a")
+    bad(io, a, "a|+")
+    bad(io, a, "(?)+")
+    bad(io, a, "(?i)*")
+    bad(io, a, "(?<!a)")
+    bad(io, a, "(?>a)")
+    bad(io, a, "(?#c)")
+    bad(io, a, "a**")
+    bad(io, a, "a{2}*")
+    bad(io, a, "a{1001}")
+    bad(io, a, "a{2,1001}")
+    bad(io, a, "a{3,2}")
+    bad(io, a, "ab\\")
+    bad(io, a, "a\\q")
+    bad(io, a, "\\1")
+    bad(io, a, "[\\q]")
+    bad(io, a, "(?=a)")
+    bad(io, a, "(?!a)")
+    bad(io, a, "(?<=a)")
+    bad(io, a, "(?x)")
+    bad(io, a, "(?i-)")
+    bad(io, a, "(?i")
+    bad(io, a, "(?<n>a)(?<n>b)")
+    bad(io, a, "(?P<1x>a)")
+    bad(io, a, "(?<>a)")
+    bad(io, a, "(?<a-b>c)")
+    bad(io, a, "[[:nope:]]")
+    bad(io, a, "\\x{110000}")
+    bad(io, a, "\\x{}")
+    bad(io, a, "\\xg0")
+    bad(io, a, "\\x4")
+    bad(io, a, "a\xffb")
+    bad(io, a, "((((((((((a))))))))))")
+    // Too large: 1000 * 1000 copies of a.
+    bad(io, a, "(?:a{1000}){1000}")
+    // Fine: what may look wrong but is not.
+    bad(io, a, "a{")
+    bad(io, a, "a{,2}")
+    bad(io, a, "[]a]")
+    bad(io, a, "[a-]")
+    bad(io, a, "(?i)")
+    bad(io, a, "(?)")
+    bad(io, a, "\\_\\ \\#")
+    bad(io, a, "(?<Year_2>\\d+)")
+}

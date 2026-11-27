@@ -1,0 +1,342 @@
+// regex: regular expressions for Egg, matched in time linear in the
+// text, as RE2 and Rust's regex do: no back-references or lookaround,
+// so no pattern can make a match take exponential time.
+//
+// const regex = @import("regex")
+// const re = try regex.compile(a, "(\\w+)@(\\w+)\\.com")
+// defer a.free(re)
+// re.is_match(a, text)             whether it matches anywhere
+// re.find(a, text)                 ?regex.Span of the leftmost match
+// re.captures(a, text, &caps)      caps[i]: ?regex.Span of group i
+//
+// Positions are byte offsets, so text[m.start..m.end] is the match.
+// Patterns and text are UTF-8: . and classes match a code point, and a
+// byte that is not UTF-8 matches . as U+FFFD would. Matching takes an
+// Allocator for the VM's lists, which it frees before returning; a Regex
+// is only read, so threads may share one.
+uses alloc
+
+const parse = @import("parse.egg")
+const prog = @import("prog.egg")
+
+// A match, or a group in one: text[start..end].
+const Span = struct {
+    start: i64
+    end: i64
+
+    fn len(self: Span) i64 {
+        return self.end - self.start
+    }
+}
+
+const Regex = struct {
+    insts: Buf(prog.Inst)
+    ranges: Buf(parse.Range)
+    names: Buf(u8)
+    groups: Buf(parse.Group)
+    // Groups, counting the whole match as group 0.
+    ncap: i64
+    // Every match starts at the start of the text (\A or ^ first).
+    anchored: bool
+
+    // Whether the pattern matches anywhere in s.
+    fn is_match(self: Regex, a: Allocator, s: []u8) bool {
+        var slots: Buf(i64) = .empty
+        defer a.free(slots)
+        return run(self, a, s, 0, 0, true, &slots)
+    }
+
+    // The leftmost match in s, preferring what the pattern prefers (as
+    // Perl, RE2 and Rust do: a|ab finds "a" in "ab"), or null.
+    fn find(self: Regex, a: Allocator, s: []u8) ?Span {
+        return self.find_at(a, s, 0)
+    }
+
+    // The leftmost match in s that starts at start or later. ^, \b and
+    // the like still see the text before start: "^" does not match at
+    // start > 0. For every match in turn, search on from its end, or one
+    // character past it when it is empty.
+    fn find_at(self: Regex, a: Allocator, s: []u8, start: i64) ?Span {
+        var slots: Buf(i64) = .empty
+        defer a.free(slots)
+        if (!run(self, a, s, start, 2, false, &slots)) {
+            return null
+        }
+        return Span{ .start = slots[0], .end = slots[1] }
+    }
+
+    // The leftmost match and its groups: caps gets one ?Span per group,
+    // group 0 the whole match, null for a group that took no part.
+    // False, and caps empty, if there is no match.
+    fn captures(self: Regex, a: Allocator, s: []u8, inout caps: Buf(?Span)) bool {
+        return self.captures_at(a, s, 0, &caps)
+    }
+
+    fn captures_at(self: Regex, a: Allocator, s: []u8, start: i64, inout caps: Buf(?Span)) bool {
+        var slots: Buf(i64) = .empty
+        defer a.free(slots)
+        a.resize(&caps, 0, null)
+        if (!run(self, a, s, start, 2 * self.ncap, false, &slots)) {
+            return false
+        }
+        var i = 0
+        while (i < self.ncap) {
+            const lo = slots[2 * i]
+            const hi = slots[2 * i + 1]
+            if (lo >= 0 and hi >= 0) {
+                a.push(&caps, Span{ .start = lo, .end = hi })
+            } else {
+                a.push(&caps, null)
+            }
+            i = i + 1
+        }
+        return true
+    }
+
+    // How many groups the pattern has, not counting the whole match.
+    fn group_count(self: Regex) i64 {
+        return self.ncap - 1
+    }
+
+    // The number of the group called name ((?P<name>...) or
+    // (?<name>...)), or null.
+    fn group_index(self: Regex, name: []u8) ?i64 {
+        for (self.groups) |g| {
+            if (self.names[g.at..g.at + g.len] == name) {
+                return g.index
+            }
+        }
+        return null
+    }
+}
+
+// The pattern compiled, or an error such as error.MissingParen.
+fn compile(a: Allocator, pattern: []u8) !Regex {
+    var at = 0
+    return compile_where(a, pattern, &at)
+}
+
+// compile, leaving at, on an error, at the byte offset of the problem.
+fn compile_where(a: Allocator, pattern: []u8, inout at: i64) !Regex {
+    var t = try parse.parse(a, pattern, &at)
+    const insts = prog.compile(a, t) catch |e| {
+        a.free(t)
+        return e
+    }
+    const anchored = prog.anchored(t, t.root)
+    const re = Regex{ .insts = insts, .ranges = @take(&t.ranges), .names = @take(&t.names), .groups = @take(&t.groups), .ncap = t.ncap, .anchored = anchored }
+    a.free(t)
+    return re
+}
+
+// The threads at one position, in priority order: dense[0..n] are their
+// instructions, sparse[pc] where pc is in dense (if it is), and
+// caps[i * k..(i + 1) * k] the slots of thread i.
+const List = struct {
+    dense: Buf(i64)
+    sparse: Buf(i64)
+    caps: Buf(i64)
+    n: i64
+}
+
+fn new_list(a: Allocator, ninsts: i64, k: i64) List {
+    return List{ .dense = a.alloc(ninsts, @as(i64, 0)), .sparse = a.alloc(ninsts, @as(i64, 0)), .caps = a.alloc(ninsts * k, @as(i64, -1)), .n = 0 }
+}
+
+fn has(l: List, pc: i64) bool {
+    const i = l.sparse[pc]
+    return i < l.n and l.dense[i] == pc
+}
+
+// What add has left to do: go on at pc, or (slot >= 0) put val back in
+// a slot that a save changed, once every path after the save is done.
+const Job = struct {
+    pc: i64
+    slot: i64
+    val: i64
+}
+
+// Runs the program on s from start, Pike's way: all threads step over a
+// character together, so the time is O(len(s) * len(insts)). k slots
+// (2 per group) are wanted; on a match, out holds them, -1 for a group
+// that took no part. With earliest, any match will do.
+fn run(re: Regex, a: Allocator, s: []u8, start: i64, k: i64, earliest: bool, inout out: Buf(i64)) bool {
+    const n = @len(re.insts)
+    var lists: Buf(List) = .empty
+    defer a.free(lists)
+    a.push(&lists, new_list(a, n, k))
+    a.push(&lists, new_list(a, n, k))
+    var stack: Buf(Job) = .empty
+    defer a.free(stack)
+    var tmp = a.alloc(k, @as(i64, -1))
+    defer a.free(tmp)
+    a.resize(&out, k, -1)
+    var matched = false
+    var pos = start
+    while (true) {
+        if (!matched and (!re.anchored or pos == 0)) {
+            var j = 0
+            while (j < k) {
+                tmp[j] = -1
+                j = j + 1
+            }
+            add(re, a, s, &lists[0], &stack, &tmp, k, 0, pos)
+        }
+        if (lists[0].n == 0 and (matched or (re.anchored and pos > 0))) {
+            break
+        }
+        var r = parse.Rune{ .cp = -1, .len = 1, .ok = false }
+        if (pos < @len(s)) {
+            r = parse.decode(s, pos)
+        }
+        var i = 0
+        while (i < lists[0].n) {
+            const pc = lists[0].dense[i]
+            const ins = re.insts[pc]
+            var takes = false
+            switch (ins.op) {
+                .match => {
+                    if (earliest) {
+                        return true
+                    }
+                    var j = 0
+                    while (j < k) {
+                        out[j] = lists[0].caps[i * k + j]
+                        j = j + 1
+                    }
+                    matched = true
+                    // Threads after this one have a lower priority.
+                    break
+                }
+                .char => {
+                    takes = r.cp == ins.x
+                }
+                .cls => {
+                    takes = r.cp >= 0 and in_class(re, ins.x, ins.y, r.cp)
+                }
+                .any => {
+                    takes = r.cp >= 0 and r.cp != 10
+                }
+                .any_nl => {
+                    takes = r.cp >= 0
+                }
+                else => {}
+            }
+            if (takes) {
+                var j = 0
+                while (j < k) {
+                    tmp[j] = lists[0].caps[i * k + j]
+                    j = j + 1
+                }
+                add(re, a, s, &lists[1], &stack, &tmp, k, pc + 1, pos + r.len)
+            }
+            i = i + 1
+        }
+        if (pos >= @len(s)) {
+            break
+        }
+        pos = pos + r.len
+        @swap(&lists, 0, 1)
+        lists[1].n = 0
+    }
+    return matched
+}
+
+// Adds the thread at pc, with the slots in caps, to l, following jumps,
+// splits (the first branch first), saves and assertions at pos to the
+// instructions that consume a character or match.
+fn add(re: Regex, a: Allocator, s: []u8, inout l: List, inout stack: Buf(Job), inout caps: Buf(i64), k: i64, start: i64, pos: i64) void {
+    a.push(&stack, Job{ .pc = start, .slot = -1, .val = 0 })
+    while (a.pop(&stack)) |job| {
+        if (job.slot >= 0) {
+            caps[job.slot] = job.val
+            continue
+        }
+        var pc = job.pc
+        while (!has(l, pc)) {
+            l.sparse[pc] = l.n
+            l.dense[l.n] = pc
+            const i = l.n
+            l.n = l.n + 1
+            const ins = re.insts[pc]
+            var next = -1
+            switch (ins.op) {
+                .jmp => {
+                    next = ins.x
+                }
+                .split => {
+                    a.push(&stack, Job{ .pc = ins.y, .slot = -1, .val = 0 })
+                    next = ins.x
+                }
+                .save => {
+                    if (ins.x < k) {
+                        a.push(&stack, Job{ .pc = 0, .slot = ins.x, .val = caps[ins.x] })
+                        caps[ins.x] = pos
+                    }
+                    next = pc + 1
+                }
+                .begin_line => {
+                    if (pos == 0 or s[pos - 1] == '\n') {
+                        next = pc + 1
+                    }
+                }
+                .end_line => {
+                    if (pos == @len(s) or s[pos] == '\n') {
+                        next = pc + 1
+                    }
+                }
+                .begin_text => {
+                    if (pos == 0) {
+                        next = pc + 1
+                    }
+                }
+                .end_text => {
+                    if (pos == @len(s)) {
+                        next = pc + 1
+                    }
+                }
+                .word, .not_word => {
+                    const before = pos > 0 and is_word(s[pos - 1])
+                    const after = pos < @len(s) and is_word(s[pos])
+                    if ((before != after) == (ins.op == .word)) {
+                        next = pc + 1
+                    }
+                }
+                else => {
+                    // Consumes or matches: it keeps the slots as they are.
+                    var j = 0
+                    while (j < k) {
+                        l.caps[i * k + j] = caps[j]
+                        j = j + 1
+                    }
+                }
+            }
+            if (next < 0) {
+                break
+            }
+            pc = next
+        }
+    }
+}
+
+fn is_word(c: u8) bool {
+    return (c >= 'a' and c <= 'z') or (c >= 'A' and c <= 'Z') or (c >= '0' and c <= '9') or c == '_'
+}
+
+// Whether cp is in the sorted ranges re.ranges[at..at + n].
+fn in_class(re: Regex, at: i64, n: i64, cp: i64) bool {
+    var lo = at
+    var hi = at + n
+    while (lo < hi) {
+        const mid = lo + (hi - lo) / 2
+        const r = re.ranges[mid]
+        if (cp < r.lo) {
+            hi = mid
+        } else if (cp > r.hi) {
+            lo = mid + 1
+        } else {
+            return true
+        }
+    }
+    return false
+}
