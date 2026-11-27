@@ -66,6 +66,30 @@ fn main(io: Io, a: Allocator) !void {
     while (kv.next(a, "x=y z=w", &words)) |m| {
         show(io, m)
     }
+    // A long text: the API runs pike on it (past MAX_BACKTRACK), and
+    // backtrack, called itself, grows its stack many times over; both
+    // find the same groups.
+    var long: Buf(u8) = .empty
+    defer a.free(long)
+    var w = 0
+    while (w < 20000) {
+        a.append_str(&long, if (w % 7 == 3) "ab" else "a")
+        w = w + 1
+    }
+    a.append_str(&long, "c!")
+    const tail = try regex.compile(a, "(a|ab)*(c)")
+    defer a.free(tail)
+    if (tail.captures(a, long, &caps)) {
+        for (caps) |c| {
+            show(io, c)
+        }
+    }
+    var slots: Buf(i64) = .empty
+    defer a.free(slots)
+    if (regex.backtrack(tail, a, long, 0, 6, &slots)) {
+        io.print(slots[0], "-", slots[1], " ", slots[2], "-", slots[3], " ", slots[4], "-", slots[5])
+    }
+    io.print(regex.pike(tail, a, long, 0, 0, true, &slots), " ", regex.backtrack(tail, a, long, 0, 0, &slots))
     const none = try regex.compile(a, "a")
     defer a.free(none)
     io.print(none.group_count(), " ", none.is_match(a, "bab"), " ", none.is_match(a, "bbb"))

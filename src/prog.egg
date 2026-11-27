@@ -250,3 +250,86 @@ fn anchored(t: parse.Ast, n: i64) bool {
     }
     return false
 }
+
+// The bytes a match can start with, in first, following the program from
+// its start through everything that consumes nothing; false if that is
+// no use: a match may be empty, or start with any byte (. and classes
+// that hold U+FFFD match a byte that is not UTF-8, which may be any).
+// Only an ASCII byte or the first byte of a UTF-8 sequence is set, and a
+// search never stops inside a character at one of those.
+fn firsts(a: Allocator, insts: Buf(Inst), ranges: Buf(parse.Range), inout first: [256]bool) bool {
+    var seen = a.alloc(@len(insts), false)
+    defer a.free(seen)
+    var stack: Buf(i64) = .empty
+    defer a.free(stack)
+    a.push(&stack, 0)
+    while (a.pop(&stack)) |pc| {
+        if (seen[pc]) {
+            continue
+        }
+        seen[pc] = true
+        const ins = insts[pc]
+        switch (ins.op) {
+            .jmp => {
+                a.push(&stack, ins.x)
+            }
+            .split => {
+                a.push(&stack, ins.x)
+                a.push(&stack, ins.y)
+            }
+            .save, .begin_line, .end_line, .begin_text, .end_text, .word, .not_word => {
+                a.push(&stack, pc + 1)
+            }
+            .char => {
+                if (ins.x == 65533) {
+                    return false
+                }
+                lead_bytes(&first, ins.x, ins.x)
+            }
+            .cls => {
+                var i = ins.x
+                while (i < ins.x + ins.y) {
+                    const r = ranges[i]
+                    if (r.lo <= 65533 and r.hi >= 65533) {
+                        return false
+                    }
+                    lead_bytes(&first, r.lo, r.hi)
+                    i = i + 1
+                }
+            }
+            .any, .any_nl, .match => {
+                return false
+            }
+        }
+    }
+    return true
+}
+
+// Sets the first byte of the UTF-8 of every code point from lo to hi.
+fn lead_bytes(inout first: [256]bool, lo: i64, hi: i64) void {
+    var c = lo
+    while (c <= hi and c < 128) {
+        first[c] = true
+        c = c + 1
+    }
+    if (hi < 128) {
+        return
+    }
+    var b = lead(if (lo > 128) lo else 128)
+    const last = lead(hi)
+    while (b <= last) {
+        first[b] = true
+        b = b + 1
+    }
+}
+
+// The first byte of the UTF-8 of cp, 128 or more.
+fn lead(cp: i64) i64 {
+    if (cp < 2048) {
+        return 192 | (cp >> 6)
+    }
+    if (cp < 65536) {
+        return 224 | (cp >> 12)
+    }
+    return 240 | (cp >> 18)
+}

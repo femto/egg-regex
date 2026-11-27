@@ -3,7 +3,10 @@
 // leftmost match, whether it matches at all, every match (find_all, as
 // Go's FindAll), the text with each match replaced by "<$0|${1}>"
 // (replace_all) and by "#" (replace_all_literal), and the pieces split
-// leaves. test/replace.egg checks templates with r.
+// leaves. test/replace.egg checks templates with r. Each case is also
+// run by both engines directly, pike and backtrack, whatever the API
+// chose, and a difference between them is printed, which no expected
+// output has.
 uses alloc, io
 
 const regex = @import("regex")
@@ -68,6 +71,7 @@ fn t(io: Io, a: Allocator, inout count: i64, pattern: []u8, s: []u8) void {
             a.append_int(&out, m.end)
         }
     }
+    engines(a, &out, re, s)
     var replaced: Buf(u8) = .empty
     defer a.free(replaced)
     re.replace_all(a, &replaced, s, "<$0|${1}>")
@@ -87,6 +91,40 @@ fn t(io: Io, a: Allocator, inout count: i64, pattern: []u8, s: []u8) void {
         quoted(a, &out, s[p.start..p.end])
     }
     io.print(n, ": ", out)
+}
+
+// The slots of the leftmost match from both engines, for every group and
+// for the whole match alone, and whether any match: " ENGINES DIFFER"
+// at the end of out if they do not agree.
+fn engines(a: Allocator, inout out: Buf(u8), re: regex.Regex, s: []u8) void {
+    var same = true
+    for ([_]i64{ 2 * re.ncap, 2, 0 }) |k| {
+        var x: Buf(i64) = .empty
+        defer a.free(x)
+        var y: Buf(i64) = .empty
+        defer a.free(y)
+        var z: Buf(i64) = .empty
+        defer a.free(z)
+        const px = regex.pike(re, a, s, 0, k, false, &x)
+        const by = regex.backtrack(re, a, s, 0, k, &y)
+        // Any match will do: only whether there is one is the same.
+        const pe = regex.pike(re, a, s, 0, k, true, &z)
+        if (px != by or pe != by) {
+            same = false
+        }
+        if (px and by) {
+            var i = 0
+            while (i < k) {
+                if (x[i] != y[i]) {
+                    same = false
+                }
+                i = i + 1
+            }
+        }
+    }
+    if (!same) {
+        a.append_str(&out, " ENGINES DIFFER")
+    }
 }
 
 // s with each match of pattern replaced by template expanded, and with
