@@ -60,7 +60,9 @@ every match in turn, call `find_at` from the end of the last one, or one
 character past it when it was empty, and stop when there is no match or
 the start has gone past the end of the text (after an empty match at the
 end); `find_at` and `captures_at` find nothing from a start outside
-`0..@len(s)`. test/lib/check.egg does what Go's `FindAll` does.
+`0..@len(s)`. To find what Go's `FindAll` finds, also skip an empty match
+that starts where the last match ended: `a*` on `a` is then `0..1` alone,
+not `0..1` and `1..1`. test/lib/check.egg does just that.
 
 ## Syntax
 
