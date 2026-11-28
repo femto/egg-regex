@@ -169,7 +169,7 @@ NFA; the DFA's states live as long as the `Iter`, or the `find_all`,
 `replace_all` or `split` call, that runs the searches.
 
 `bench/bench.egg` times some cases (`eggc build bench/bench.egg --release
---pkg regex=src`), and `bench/go/main.go` the same with Go's `regexp`. On
+--pkg regex=src`, with Egg 0.2.3 or later for std/time's clock), and `bench/go/main.go` the same with Go's `regexp`. On
 a 2019 Intel Mac, ms:
 
 | | egg-regex | Go |
