@@ -119,7 +119,7 @@ RE2's, as Go's `regexp` has it:
 | `\d` `\w` `\s` `\D` `\W` `\S` | ASCII digit, word character, space, and their negations |
 | `\pL` `\p{Lu}` `\p{Greek}` `\PL` `\p{^Greek}` `\p{Any}` | a Unicode general category or script, as Go's `unicode` package has them (Unicode 17.0.0), its negation, or any code point; in classes too (`[\p{Han}\d]`) |
 | `xy` `x\|y` | concatenation, alternation |
-| `x*` `x+` `x?` `x{n}` `x{n,}` `x{n,m}` | repetition, greedy (n and m at most 1000) |
+| `x*` `x+` `x?` `x{n}` `x{n,}` `x{n,m}` | repetition, greedy (n and m at most 1000, and, as in Go, counts inside one another at most 1000 multiplied along any path: `(a{31}){31}` but not `(a{32}){32}`) |
 | `x*?` `x+?` `x??` `x{n,m}?` | the same, lazy |
 | `(x)` `(?P<name>x)` `(?<name>x)` `(?:x)` | groups, named, not capturing |
 | `^` `$` | start and end of text (of a line with `(?m)`) |

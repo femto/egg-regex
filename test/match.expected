@@ -197,42 +197,42 @@
 197: error
 198: error
 199: error
-200: (0,1) true all 0-1 repl "<\xff|>" lit "#" split "" ""
-201: (0,3) true all 0-3 repl "<a\xffb|>" lit "#" split "" ""
-202: (0,2) true all 0-2 repl "<\xff\xfe|>" lit "#" split "" ""
-203: (0,1) true all 0-1 repl "<\xff|>" lit "#" split "" ""
-204: (1,3) true all 1-3 repl "\xff<aa|>\xff" lit "\xff#\xff" split "\xff" "\xff"
-205: (0,3) true all 0-3 repl "<abc|>" lit "#" split "" ""
-206: (0,2)(-)(-) true all 0-2 repl "<ab|>d" lit "#d" split "" "d"
-207: (0,0) true all 0-0 1-5 repl "<|>x<aabb|>" lit "#x#" split "x" ""
-208: (0,3) true all 0-3 repl "<foo|>bar" lit "#bar" split "" "bar"
-209: (0,6)(0,6) true all 0-6 repl "<foobar|foobar>" lit "#" split "" ""
-210: (5,20)(5,8)(9,16) true all 5-20 22-34 repl "mail <bob@example.com|bob>, <eve@corp.com|eve>" lit "mail #, #" split "mail " ", " ""
-211: (8,15)(8,10)(11,13)(14,15) true all 8-15 repl "version <10.24.3|10>-beta" lit "version #-beta" split "version " "-beta"
-212: (0,24)(0,3)(4,15) true all 0-24 repl "<GET /index.html HTTP/1.1|GET>" lit "#" split "" ""
-213: (3,8)(3,8)(6,8)(-) true all 3-8 12-16 repl "an <Error|Error>, a <WARN|WARN>, no warns" lit "an #, a #, no warns" split "an " ", a " ", no warns"
-214: (4,10)(8,9) true all 4-10 repl "say <\x22a\x5c\x22b\x22|b> ok" lit "say # ok" split "say " " ok"
-215: (0,31)(29,30) true all 0-31 repl "<aaaaaaaaaaaaaaaaaaaaaaaaaaaaaab|a>" lit "#" split "" ""
-216: no false repl "xxxxxxxxxxxxxxxxxxxxxxxxx" lit "xxxxxxxxxxxxxxxxxxxxxxxxx" split "xxxxxxxxxxxxxxxxxxxxxxxxx"
-217: (5,11) true all 5-11 14-21 repl "ab12 <abcd12|>3 a<bcdef45|>" lit "ab12 #3 a#" split "ab12 " "3 a" ""
-218: error
-219: error
-220: error
-221: error
-222: error
-223: error
-224: error
-225: error
-226: error
-227: error
-228: error
-229: error
-230: error
-231: error
-232: error
-233: error
-234: error
-235: (0,0) true all 0-0 repl "<|>" lit "#" split ""
+200: error
+201: no false repl "" lit "" split ""
+202: error
+203: no false repl "" lit "" split ""
+204: error
+205: no false repl "" lit "" split ""
+206: error
+207: no false repl "" lit "" split ""
+208: no false repl "" lit "" split ""
+209: error
+210: error
+211: error
+212: (0,0)(0,0) true all 0-0 repl "<|>" lit "#" split ""
+213: (0,0)(0,0) true all 0-0 repl "<|>" lit "#" split ""
+214: (0,0)(0,0) true all 0-0 repl "<|>" lit "#" split ""
+215: no false repl "" lit "" split ""
+216: error
+217: (0,1) true all 0-1 repl "<\xff|>" lit "#" split "" ""
+218: (0,3) true all 0-3 repl "<a\xffb|>" lit "#" split "" ""
+219: (0,2) true all 0-2 repl "<\xff\xfe|>" lit "#" split "" ""
+220: (0,1) true all 0-1 repl "<\xff|>" lit "#" split "" ""
+221: (1,3) true all 1-3 repl "\xff<aa|>\xff" lit "\xff#\xff" split "\xff" "\xff"
+222: (0,3) true all 0-3 repl "<abc|>" lit "#" split "" ""
+223: (0,2)(-)(-) true all 0-2 repl "<ab|>d" lit "#d" split "" "d"
+224: (0,0) true all 0-0 1-5 repl "<|>x<aabb|>" lit "#x#" split "x" ""
+225: (0,3) true all 0-3 repl "<foo|>bar" lit "#bar" split "" "bar"
+226: (0,6)(0,6) true all 0-6 repl "<foobar|foobar>" lit "#" split "" ""
+227: (5,20)(5,8)(9,16) true all 5-20 22-34 repl "mail <bob@example.com|bob>, <eve@corp.com|eve>" lit "mail #, #" split "mail " ", " ""
+228: (8,15)(8,10)(11,13)(14,15) true all 8-15 repl "version <10.24.3|10>-beta" lit "version #-beta" split "version " "-beta"
+229: (0,24)(0,3)(4,15) true all 0-24 repl "<GET /index.html HTTP/1.1|GET>" lit "#" split "" ""
+230: (3,8)(3,8)(6,8)(-) true all 3-8 12-16 repl "an <Error|Error>, a <WARN|WARN>, no warns" lit "an #, a #, no warns" split "an " ", a " ", no warns"
+231: (4,10)(8,9) true all 4-10 repl "say <\x22a\x5c\x22b\x22|b> ok" lit "say # ok" split "say " " ok"
+232: (0,31)(29,30) true all 0-31 repl "<aaaaaaaaaaaaaaaaaaaaaaaaaaaaaab|a>" lit "#" split "" ""
+233: no false repl "xxxxxxxxxxxxxxxxxxxxxxxxx" lit "xxxxxxxxxxxxxxxxxxxxxxxxx" split "xxxxxxxxxxxxxxxxxxxxxxxxx"
+234: (5,11) true all 5-11 14-21 repl "ab12 <abcd12|>3 a<bcdef45|>" lit "ab12 #3 a#" split "ab12 " "3 a" ""
+235: error
 236: error
 237: error
 238: error
@@ -242,3 +242,20 @@
 242: error
 243: error
 244: error
+245: error
+246: error
+247: error
+248: error
+249: error
+250: error
+251: error
+252: (0,0) true all 0-0 repl "<|>" lit "#" split ""
+253: error
+254: error
+255: error
+256: error
+257: error
+258: error
+259: error
+260: error
+261: error

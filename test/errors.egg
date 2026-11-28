@@ -45,6 +45,8 @@ fn main(io: Io, a: Allocator) void {
     bad(io, a, "a{2}*")
     bad(io, a, "a{1001}")
     bad(io, a, "a{2,1001}")
+    bad(io, a, "x(a{50}){50}")
+    bad(io, a, "((a{10}){10}){11}")
     bad(io, a, "a{3,2}")
     bad(io, a, "ab\\")
     bad(io, a, "a\\q")
