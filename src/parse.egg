@@ -19,14 +19,16 @@ const Kind = enum { empty, lit, cls, any, any_nl, begin_line, end_line, begin_te
 
 // lit: a is the code point. cls: ranges[a..a + b]. cat, alt: kids[a..a +
 // b]. rep: a is the node repeated, b..c the counts (c is -1 for no
-// limit), greedy whether it takes as many as it can first. group: a is
-// the node inside, b the group's number.
+// limit), greedy whether it takes as many as it can first, counted
+// whether it was written {n,m} (not *, + or ?). group: a is the node
+// inside, b the group's number.
 const Node = struct {
     kind: Kind
     a: i64
     b: i64
     c: i64
     greedy: bool
+    counted: bool
 }
 
 // Code points lo to hi, both included.
@@ -127,7 +129,7 @@ fn parse(a: Allocator, s: []u8, inout at: i64) !Ast {
 }
 
 fn add(a: Allocator, inout t: Ast, kind: Kind, x: i64, y: i64) i64 {
-    a.push(&t.nodes, Node{ .kind = kind, .a = x, .b = y, .c = 0, .greedy = true })
+    a.push(&t.nodes, Node{ .kind = kind, .a = x, .b = y, .c = 0, .greedy = true, .counted = false })
     return @len(t.nodes) - 1
 }
 
@@ -186,6 +188,24 @@ fn concat(a: Allocator, s: []u8, inout t: Ast, inout at: i64, inout flags: Flags
                 end = r.end
             }
         }
+        if (min < 0 and c == '\\' and at + 1 < @len(s) and s[at + 1] == 'Q') {
+            // \Q...\E: every character up to \E (or the end) a literal of
+            // its own, so that a repetition after it repeats the last.
+            at = at + 2
+            while (at < @len(s) and !(s[at] == '\\' and at + 1 < @len(s) and s[at + 1] == 'E')) {
+                const r = decode(s, at)
+                if (!r.ok) {
+                    return error.BadUtf8
+                }
+                a.push(&items, literal(a, &t, r.cp, flags))
+                at = at + r.len
+            }
+            if (at < @len(s)) {
+                at = at + 2
+            }
+            repeated = false
+            continue
+        }
         if (min < 0) {
             const item = try atom(a, s, &t, &at, &flags, depth)
             if (item >= 0) {
@@ -212,8 +232,15 @@ fn concat(a: Allocator, s: []u8, inout t: Ast, inout at: i64, inout flags: Flags
             end = end + 1
         }
         const last = @len(items) - 1
-        a.push(&t.nodes, Node{ .kind = .rep, .a = items[last], .b = min, .c = max, .greedy = greedy })
+        const counted = c == '{'
+        a.push(&t.nodes, Node{ .kind = .rep, .a = items[last], .b = min, .c = max, .greedy = greedy, .counted = counted })
         items[last] = @len(t.nodes) - 1
+        // As Go: counted repetitions inside one another may not go past
+        // MAX_REPEAT along any path ((a{2}){501} is too many, though
+        // (a{10}b{10}){51} is not).
+        if (counted and (min >= 2 or max >= 2) and !repeats_fit(t, items[last], MAX_REPEAT)) {
+            return error.RepeatTooBig
+        }
         repeated = true
         at = end
     }
@@ -221,6 +248,43 @@ fn concat(a: Allocator, s: []u8, inout t: Ast, inout at: i64, inout flags: Flags
         return add(a, &t, .empty, 0, 0)
     }
     return list(a, &t, .cat, items)
+}
+
+// Whether the counted repetitions in node n, each taking its largest
+// count (or its smallest, with no largest) from what the ones around it
+// leave of limit, fit, as Go's repeatIsValid has it. A {0} holds
+// nothing; *, + and ? count for nothing.
+fn repeats_fit(t: Ast, n: i64, limit: i64) bool {
+    const node = t.nodes[n]
+    var left = limit
+    if (node.kind == .rep and node.counted) {
+        var m = node.c
+        if (m == 0) {
+            return true
+        }
+        if (m < 0) {
+            m = node.b
+        }
+        if (m > left) {
+            return false
+        }
+        if (m > 0) {
+            left = left / m
+        }
+    }
+    if (node.kind == .rep or node.kind == .group) {
+        return repeats_fit(t, node.a, left)
+    }
+    if (node.kind == .cat or node.kind == .alt) {
+        var i = 0
+        while (i < node.b) {
+            if (!repeats_fit(t, t.kids[node.a + i], left)) {
+                return false
+            }
+            i = i + 1
+        }
+    }
+    return true
 }
 
 // {n}, {n,} or {n,m} at s[at]: the counts (hi -1 for none) and where it
@@ -449,8 +513,10 @@ fn escape(a: Allocator, s: []u8, inout t: Ast, inout at: i64, flags: Flags) !i64
 }
 
 // The code point a backslash at s[at] stands for, moving at past it:
-// \n \t \r \f \v \a, \xHH, \x{H...}, and any other ASCII byte but a
-// letter or digit as itself (as in RE2 and Go: \. \_ \ ).
+// \n \t \r \f \v \a, \xHH, \x{H...}, octal (\0 and up to two more digits,
+// or \1 to \7 and one or two more: \1 alone would be a back-reference),
+// and any other ASCII byte but a letter or digit as itself (as in RE2 and
+// Go: \. \_ \ ).
 fn escape_char(s: []u8, inout at: i64) !i64 {
     if (at + 1 >= @len(s)) {
         return error.TrailingBackslash
@@ -471,6 +537,15 @@ fn escape_char(s: []u8, inout at: i64) !i64 {
         return 7
     } else if (c == 'x') {
         return hex_escape(s, &at)
+    } else if (c >= '0' and c <= '7' and (c == '0' or (at < @len(s) and s[at] >= '0' and s[at] <= '7'))) {
+        var n = @as(i64, c - '0')
+        var k = 0
+        while (k < 2 and at < @len(s) and s[at] >= '0' and s[at] <= '7') {
+            n = n * 8 + @as(i64, s[at] - '0')
+            at = at + 1
+            k = k + 1
+        }
+        return n
     } else if (c < 128 and !is_letter(@as(i64, c)) and !(c >= '0' and c <= '9')) {
         return @as(i64, c)
     }

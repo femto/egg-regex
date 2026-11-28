@@ -15,10 +15,16 @@ a** -> NestedRepeat at 2
 a{2}* -> NestedRepeat at 4
 a{1001} -> RepeatTooBig at 1
 a{2,1001} -> RepeatTooBig at 1
+x(a{50}){50} -> RepeatTooBig at 8
+((a{10}){10}){11} -> RepeatTooBig at 13
 a{3,2} -> BadRepeat at 1
 ab\ -> TrailingBackslash at 2
 a\q -> BadEscape at 1
 \1 -> BadEscape at 0
+a\18 -> BadEscape at 1
+x\E -> BadEscape at 1
+\Q\E+ -> NothingToRepeat at 4
+[\Qa\E] -> BadEscape at 1
 [\q] -> BadEscape at 1
 (?=a) -> BadGroup at 2
 (?!a) -> BadGroup at 2
@@ -42,7 +48,7 @@ a\p{Nope} -> BadProperty at 1
 \x4 -> BadEscape at 0
 a\xffb -> BadUtf8 at 1
 ((((((((((a)))))))))) -> ok
-(?:a{1000}){1000} -> TooBig at 17
+(?:a{1000}){1000} -> RepeatTooBig at 11
 a{ -> ok
 a{,2} -> ok
 []a] -> ok
@@ -50,5 +56,6 @@ a{,2} -> ok
 (?i) -> ok
 (?) -> ok
 \_\ \# -> ok
+\Q(?<x>[a\E\012\0 -> ok
 (?<Year_2>\d+) -> ok
 \p{^Greek}\PL\pN\p{Any} -> ok

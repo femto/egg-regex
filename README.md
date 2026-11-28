@@ -112,12 +112,14 @@ RE2's, as Go's `regexp` has it:
 | | |
 | --- | --- |
 | `x` `\.` `\x41` `\x{65e5}` `\n` `\t` `\r` `\f` `\v` `\a` | a character; a backslash before any ASCII but a letter or digit is that character |
+| `\101` `\0` `\012` | a character in octal: `\0` and up to two more digits, or `\1` to `\7` and one or two more (`\1` alone would be a back-reference, so it is an error) |
+| `\Qa.b*\E` | the text between `\Q` and `\E` (or the end of the pattern) as it is; a repetition after it repeats its last character |
 | `.` | any character but `\n` (any with `(?s)`) |
 | `[abc]` `[^a-z]` `[[:alpha:]]` `[[:^digit:]]` | classes, with ranges and POSIX classes |
 | `\d` `\w` `\s` `\D` `\W` `\S` | ASCII digit, word character, space, and their negations |
 | `\pL` `\p{Lu}` `\p{Greek}` `\PL` `\p{^Greek}` `\p{Any}` | a Unicode general category or script, as Go's `unicode` package has them (Unicode 17.0.0), its negation, or any code point; in classes too (`[\p{Han}\d]`) |
 | `xy` `x\|y` | concatenation, alternation |
-| `x*` `x+` `x?` `x{n}` `x{n,}` `x{n,m}` | repetition, greedy (n and m at most 1000) |
+| `x*` `x+` `x?` `x{n}` `x{n,}` `x{n,m}` | repetition, greedy (n and m at most 1000, and, as in Go, counts inside one another at most 1000 multiplied along any path: `(a{31}){31}` but not `(a{32}){32}`) |
 | `x*?` `x+?` `x??` `x{n,m}?` | the same, lazy |
 | `(x)` `(?P<name>x)` `(?<name>x)` `(?:x)` | groups, named, not capturing |
 | `^` `$` | start and end of text (of a line with `(?m)`) |
@@ -128,9 +130,8 @@ RE2's, as Go's `regexp` has it:
 Patterns and text are UTF-8: `.` and classes match a code point, and a
 byte that is not UTF-8 matches as U+FFFD would. `\d`, `\w`, `\s` and `\b`
 are ASCII, as in RE2 and Go: for any letter, write `\pL` or
-`[\pL\pN_]`. Differences from Go's `regexp`, for now: `\Q...\E` and
-octal escapes are not there yet; and a group name may not be used twice
-or start with a digit (as in RE2 and Rust).
+`[\pL\pN_]`. The one difference from Go's `regexp` is on purpose: a group
+name may not be used twice or start with a digit, as in RE2 and Rust.
 
 The Unicode tables, src/unicode.egg, are made from Go's `unicode` package
 by `go run tools/unicode/main.go > src/unicode.egg`, so that `\p{...}`
