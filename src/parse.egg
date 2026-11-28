@@ -186,6 +186,24 @@ fn concat(a: Allocator, s: []u8, inout t: Ast, inout at: i64, inout flags: Flags
                 end = r.end
             }
         }
+        if (min < 0 and c == '\\' and at + 1 < @len(s) and s[at + 1] == 'Q') {
+            // \Q...\E: every character up to \E (or the end) a literal of
+            // its own, so that a repetition after it repeats the last.
+            at = at + 2
+            while (at < @len(s) and !(s[at] == '\\' and at + 1 < @len(s) and s[at + 1] == 'E')) {
+                const r = decode(s, at)
+                if (!r.ok) {
+                    return error.BadUtf8
+                }
+                a.push(&items, literal(a, &t, r.cp, flags))
+                at = at + r.len
+            }
+            if (at < @len(s)) {
+                at = at + 2
+            }
+            repeated = false
+            continue
+        }
         if (min < 0) {
             const item = try atom(a, s, &t, &at, &flags, depth)
             if (item >= 0) {
@@ -449,8 +467,10 @@ fn escape(a: Allocator, s: []u8, inout t: Ast, inout at: i64, flags: Flags) !i64
 }
 
 // The code point a backslash at s[at] stands for, moving at past it:
-// \n \t \r \f \v \a, \xHH, \x{H...}, and any other ASCII byte but a
-// letter or digit as itself (as in RE2 and Go: \. \_ \ ).
+// \n \t \r \f \v \a, \xHH, \x{H...}, octal (\0 and up to two more digits,
+// or \1 to \7 and one or two more: \1 alone would be a back-reference),
+// and any other ASCII byte but a letter or digit as itself (as in RE2 and
+// Go: \. \_ \ ).
 fn escape_char(s: []u8, inout at: i64) !i64 {
     if (at + 1 >= @len(s)) {
         return error.TrailingBackslash
@@ -471,6 +491,15 @@ fn escape_char(s: []u8, inout at: i64) !i64 {
         return 7
     } else if (c == 'x') {
         return hex_escape(s, &at)
+    } else if (c >= '0' and c <= '7' and (c == '0' or (at < @len(s) and s[at] >= '0' and s[at] <= '7'))) {
+        var n = @as(i64, c - '0')
+        var k = 0
+        while (k < 2 and at < @len(s) and s[at] >= '0' and s[at] <= '7') {
+            n = n * 8 + @as(i64, s[at] - '0')
+            at = at + 1
+            k = k + 1
+        }
+        return n
     } else if (c < 128 and !is_letter(@as(i64, c)) and !(c >= '0' and c <= '9')) {
         return @as(i64, c)
     }

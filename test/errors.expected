@@ -19,6 +19,10 @@ a{3,2} -> BadRepeat at 1
 ab\ -> TrailingBackslash at 2
 a\q -> BadEscape at 1
 \1 -> BadEscape at 0
+a\18 -> BadEscape at 1
+x\E -> BadEscape at 1
+\Q\E+ -> NothingToRepeat at 4
+[\Qa\E] -> BadEscape at 1
 [\q] -> BadEscape at 1
 (?=a) -> BadGroup at 2
 (?!a) -> BadGroup at 2
@@ -50,5 +54,6 @@ a{,2} -> ok
 (?i) -> ok
 (?) -> ok
 \_\ \# -> ok
+\Q(?<x>[a\E\012\0 -> ok
 (?<Year_2>\d+) -> ok
 \p{^Greek}\PL\pN\p{Any} -> ok
